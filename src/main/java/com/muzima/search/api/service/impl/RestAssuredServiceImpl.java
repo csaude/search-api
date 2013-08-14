@@ -161,6 +161,11 @@ public class RestAssuredServiceImpl implements RestAssuredService {
         return indexer.getObject(key, clazz);
     }
 
+    @Override
+    public <T> Boolean objectExists(final String key, final Class<T> clazz) throws IOException {
+        return indexer.objectExists(key, clazz);
+    }
+
     /**
      * Search for an object with matching <code>key</code> and <code>clazz</code> type from the local repository. This
      * method will only return single object or null if no object match the key.
@@ -177,6 +182,10 @@ public class RestAssuredServiceImpl implements RestAssuredService {
     public Searchable getObject(final String key, final Resource resource) throws IOException {
         return indexer.getObject(key, resource);
     }
+    @Override
+    public Boolean objectExists(final String key, final Resource resource) throws IOException {
+        return indexer.objectExists(key, resource);
+    }
 
     /**
      * Search for objects with matching <code>filter</code> and <code>clazz</code> type from the local repository.
@@ -188,6 +197,7 @@ public class RestAssuredServiceImpl implements RestAssuredService {
      * @should return all object matching the search query string and class
      * @should return empty list when no object match the search query and class
      */
+    @Override
     public <T> List<T> getObjects(final List<Filter> filters, final Class<T> clazz) throws IOException {
         BooleanQuery booleanQuery = null;
         if (!CollectionUtil.isEmpty(filters)) {
@@ -201,6 +211,20 @@ public class RestAssuredServiceImpl implements RestAssuredService {
         return indexer.getObjects(booleanQuery, clazz);
     }
 
+    @Override
+    public <T> Integer countObjects(final List<Filter> filters, final Class<T> clazz) throws IOException {
+        BooleanQuery booleanQuery = null;
+        if (!CollectionUtil.isEmpty(filters)) {
+            booleanQuery = new BooleanQuery();
+            for (Filter filter : filters) {
+                String sanitizedValue = StringUtil.sanitize(filter.getFieldValue());
+                TermQuery termQuery = new TermQuery(new Term(filter.getFieldName(), sanitizedValue));
+                booleanQuery.add(termQuery, BooleanClause.Occur.MUST);
+            }
+        }
+        return indexer.countObjects(booleanQuery, clazz);
+    }
+
     /**
      * Search for objects with matching <code>filter</code> and <code>resource</code> type from the local repository.
      * This method will return list of all matching object or empty list if no object match the search query.
@@ -211,6 +235,7 @@ public class RestAssuredServiceImpl implements RestAssuredService {
      * @should return all object matching the search query and resource
      * @should return empty list when no object match the search query and resource
      */
+    @Override
     public List<Searchable> getObjects(final List<Filter> filters, final Resource resource) throws IOException {
         BooleanQuery booleanQuery = null;
         if (!CollectionUtil.isEmpty(filters)) {
@@ -222,6 +247,20 @@ public class RestAssuredServiceImpl implements RestAssuredService {
             }
         }
         return indexer.getObjects(booleanQuery, resource);
+    }
+
+    @Override
+    public Integer countObjects(final List<Filter> filters, final Resource resource) throws IOException {
+        BooleanQuery booleanQuery = null;
+        if (!CollectionUtil.isEmpty(filters)) {
+            booleanQuery = new BooleanQuery();
+            for (Filter filter : filters) {
+                String sanitizedValue = StringUtil.sanitize(filter.getFieldValue());
+                TermQuery termQuery = new TermQuery(new Term(filter.getFieldName(), sanitizedValue));
+                booleanQuery.add(termQuery, BooleanClause.Occur.MUST);
+            }
+        }
+        return indexer.countObjects(booleanQuery, resource);
     }
 
     /**

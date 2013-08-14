@@ -31,11 +31,19 @@ public interface Indexer {
 
     <T> T getObject(final String key, final Class<T> clazz) throws IOException;
 
+    <T> Boolean objectExists(final String key, final Class<T> clazz) throws IOException;
+
     Searchable getObject(final String key, final Resource resource) throws IOException;
+
+    Boolean objectExists(final String key, final Resource resource) throws IOException;
 
     <T> List<T> getObjects(final Query query, final Class<T> clazz) throws IOException;
 
+    <T> Integer countObjects(final Query query, final Class<T> clazz) throws IOException;
+
     List<Searchable> getObjects(final Query query, final Resource resource) throws IOException;
+
+    Integer countObjects(final Query query, final Resource resource) throws IOException;
 
     <T> List<T> getObjects(final String searchString, final Class<T> clazz) throws ParseException, IOException;
 

@@ -79,6 +79,8 @@ public interface RestAssuredService {
      */
     <T> T getObject(final String key, final Class<T> clazz) throws IOException;
 
+    <T> Boolean objectExists(final String key, final Class<T> clazz) throws IOException;
+
     /**
      * Search for an object with matching <code>key</code> and <code>clazz</code> type from the local repository. This
      * method will only return single object or null if no object match the key.
@@ -96,6 +98,8 @@ public interface RestAssuredService {
      */
     Searchable getObject(final String key, final Resource resource) throws IOException;
 
+    Boolean objectExists(final String key, final Resource resource) throws IOException;
+
     /**
      * Search for objects with matching <code>filter</code> and <code>clazz</code> type from the local repository.
      * This method will return list of all matching object or empty list if no object match the search query.
@@ -109,6 +113,8 @@ public interface RestAssuredService {
      */
     <T> List<T> getObjects(final List<Filter> filters, final Class<T> clazz) throws IOException;
 
+    <T> Integer countObjects(final List<Filter> filters, final Class<T> clazz) throws IOException;
+
     /**
      * Search for objects with matching <code>filters</code> and <code>resource</code> type from the local repository.
      * This method will return list of all matching object or empty list if no object match the search query.
@@ -121,6 +127,8 @@ public interface RestAssuredService {
      * @should return empty list when no object match the search query and resource
      */
     List<Searchable> getObjects(final List<Filter> filters, final Resource resource) throws IOException;
+
+    Integer countObjects(final List<Filter> filters, final Resource resource) throws IOException;
 
     /**
      * Search for objects with matching <code>searchString</code> and <code>clazz</code> type from the local repository.

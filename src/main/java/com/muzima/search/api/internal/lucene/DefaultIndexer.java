@@ -388,6 +388,26 @@ public class DefaultIndexer implements Indexer {
     }
 
     @Override
+    public <T> Boolean objectExists(final String key, final Class<T> clazz) throws IOException {
+        BooleanQuery booleanQuery = new BooleanQuery();
+        booleanQuery.add(createClassQuery(clazz), BooleanClause.Occur.MUST);
+        if (!StringUtil.isEmpty(key)) {
+            booleanQuery.add(createQuery(defaultField, key), BooleanClause.Occur.MUST);
+        }
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("Query objectExists(String, Class): {}", booleanQuery.toString());
+        }
+
+        IndexSearcher searcher = getIndexSearcher();
+        TopDocs docs = searcher.search(booleanQuery, DEFAULT_MAX_DOCUMENTS);
+        if (docs.totalHits > 1) {
+            throw new IOException("Unable to uniquely identify an object using key: '" + key + "' in the repository.");
+        }
+        return (docs.totalHits == 1);
+    }
+
+    @Override
     public Searchable getObject(final String key, final Resource resource) throws IOException {
         Searchable object = null;
 
@@ -416,6 +436,26 @@ public class DefaultIndexer implements Indexer {
     }
 
     @Override
+    public Boolean objectExists(final String key, final Resource resource) throws IOException {
+        BooleanQuery booleanQuery = new BooleanQuery();
+        booleanQuery.add(createResourceQuery(resource), BooleanClause.Occur.MUST);
+        if (!StringUtil.isEmpty(key)) {
+            booleanQuery.add(createQuery(defaultField, key), BooleanClause.Occur.MUST);
+        }
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("Query objectExists(String,  Resource): {}", booleanQuery.toString());
+        }
+
+        IndexSearcher searcher = getIndexSearcher();
+        TopDocs docs = searcher.search(booleanQuery, DEFAULT_MAX_DOCUMENTS);
+        if (docs.totalHits > 1) {
+            throw new IOException("Unable to uniquely identify an object using key: '" + key + "' in the repository.");
+        }
+        return (docs.totalHits == 1);
+    }
+
+    @Override
     public <T> List<T> getObjects(final Query query, final Class<T> clazz) throws IOException {
         List<T> objects = new ArrayList<T>();
 
@@ -440,6 +480,25 @@ public class DefaultIndexer implements Indexer {
     }
 
     @Override
+    public <T> Integer countObjects(final Query query, final Class<T> clazz) throws IOException {
+        List<T> objects = new ArrayList<T>();
+
+        BooleanQuery booleanQuery = new BooleanQuery();
+        booleanQuery.add(createClassQuery(clazz), BooleanClause.Occur.MUST);
+        if (query != null) {
+            booleanQuery.add(query, BooleanClause.Occur.MUST);
+        }
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("Query getObject(String, Class): {}", booleanQuery.toString());
+        }
+
+        IndexSearcher searcher = getIndexSearcher();
+        TopDocs docs = searcher.search(booleanQuery, DEFAULT_MAX_DOCUMENTS);
+        return docs.totalHits;
+    }
+
+    @Override
     public List<Searchable> getObjects(final Query query, final Resource resource) throws IOException {
         List<Searchable> objects = new ArrayList<Searchable>();
 
@@ -459,6 +518,25 @@ public class DefaultIndexer implements Indexer {
             objects.add(resource.deserialize(json));
         }
         return objects;
+    }
+
+    @Override
+    public Integer countObjects(final Query query, final Resource resource) throws IOException {
+        List<Searchable> objects = new ArrayList<Searchable>();
+
+        BooleanQuery booleanQuery = new BooleanQuery();
+        booleanQuery.add(createResourceQuery(resource), BooleanClause.Occur.MUST);
+        if (query != null) {
+            booleanQuery.add(query, BooleanClause.Occur.MUST);
+        }
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("Query getObject(String, Class): {}", booleanQuery.toString());
+        }
+
+        IndexSearcher searcher = getIndexSearcher();
+        TopDocs docs = searcher.search(booleanQuery, DEFAULT_MAX_DOCUMENTS);
+        return docs.totalHits;
     }
 
     @Override
