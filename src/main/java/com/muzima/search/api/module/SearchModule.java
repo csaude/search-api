@@ -53,8 +53,7 @@ public class SearchModule extends AbstractModule {
                 .annotatedWith(Names.named("connection.timeout"))
                 .toInstance(1000);
 
-        bind(new TypeLiteral<Map<String, Resource>>() {
-        })
+        bind(new TypeLiteral<Map<String, Resource>>() {})
                 .toInstance(new HashMap<String, Resource>());
 
         bind(Indexer.class)
