@@ -42,15 +42,23 @@ public class JUnitModule extends AbstractModule {
                 .annotatedWith(Names.named("configuration.lucene.document.key"))
                 .toInstance("uuid");
 
-        // ampath test server specific bindings
+        bind(Boolean.class)
+                .annotatedWith(Names.named("connection.use.proxy"))
+                .toInstance(Boolean.FALSE);
         bind(String.class)
                 .annotatedWith(Names.named("connection.username"))
-                .toInstance("test-server-username");
+                .toInstance("admin");
         bind(String.class)
                 .annotatedWith(Names.named("connection.password"))
-                .toInstance("test-server-password");
+                .toInstance("test");
         bind(String.class)
                 .annotatedWith(Names.named("connection.server"))
-                .toInstance("test-server-ip-address");
+                .toInstance("http://140.182.15.70:8081/");
+        // ampath test server specific bindings
+
+        bind(String.class).annotatedWith(Names.named("configuration.lucene.encryption")).toInstance("AES/ECB/PKCS5Padding");
+        bind(Boolean.class).annotatedWith(Names.named("configuration.lucene.usingEncryption")).toInstance(true);
+        bind(Boolean.class).annotatedWith(Names.named("configuration.lucene.usingCompression")).toInstance(false);
+
     }
 }

@@ -18,16 +18,17 @@ package com.muzima.search.api.model.resolver;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;
+import java.util.Map;
 
 public interface Resolver {
 
     /**
-     * Return the full REST resource based on the search string passed to the method.
+     * Return the full REST resource based on the parameters passed to the method.
      *
-     * @param searchString the search string.
+     * @param resourceParams the parameters of the resource to resolved.
      * @return full uri to the REST resource.
      */
-    String resolve(final String searchString) throws IOException;
+    String resolve(final Map<String, String> resourceParams) throws IOException;
 
     /**
      * Add authentication information to the http url connection.

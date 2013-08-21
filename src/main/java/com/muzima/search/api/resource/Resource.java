@@ -22,6 +22,7 @@ import com.muzima.search.api.model.serialization.Algorithm;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Interface for to represent a single resource object for the REST Assured service. This interface describe how a
@@ -189,8 +190,8 @@ public interface Resource {
      * Get the URI for the resource where the api can retrieve data. Default implementation should delegate this call to
      * the <code>Resolver</code> class.
      *
-     * @param searchString the search term for the REST URI
+     * @param resourceParams the resource parameters for the REST URI
      * @return the full REST URI with the search string
      */
-    String getUri(final String searchString) throws IOException;
+    String getUri(final Map<String, String> resourceParams) throws IOException;
 }

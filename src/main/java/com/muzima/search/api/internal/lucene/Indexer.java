@@ -23,11 +23,12 @@ import org.apache.lucene.search.Query;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Reader;
 import java.util.List;
 
 public interface Indexer {
 
-    List<Searchable> loadObjects(final Resource resource, final InputStream inputStream) throws IOException;
+    List<Searchable> loadObjects(final Resource resource, final Reader reader) throws IOException;
 
     <T> T getObject(final String key, final Class<T> clazz) throws IOException;
 

@@ -24,6 +24,7 @@ import org.apache.lucene.queryParser.ParseException;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 public interface RestAssuredService {
 
@@ -39,24 +40,22 @@ public interface RestAssuredService {
      * _date_indexed : date and time when the json was indexed
      * </pre>
      *
-     *
-     * @param searchString the string to filter object that from the REST resource.
-     * @param resource     the resource object which will describe how to index the json resource to lucene.
+     * @param resourceParams the parameters needed to construct the correct REST resource.
+     * @param resource       the resource object which will describe how to index the json resource to lucene.
      * @should load objects based on the resource description
      */
-    List<Searchable> loadObjects(final String searchString, final Resource resource) throws IOException;
+    List<Searchable> loadObjects(final Map<String, String> resourceParams, final Resource resource) throws IOException;
 
     /**
      * Load object described using the <code>resource</code> into local lucene repository. This method will load locally
      * saved json payload and then apply the <code>searchString</code> to limit the data which will be loaded into the
      * local lucene repository.
      *
-     *
      * @param searchString the search string to filter object returned from the file.
      * @param resource     the resource object which will describe how to index the json resource to lucene.
      * @param file         the file in the filesystem where the json resource is saved.
      * @should load object from filesystem based on the resource description
-     * @see RestAssuredService#loadObjects(String, com.muzima.search.api.resource.Resource)
+     * @see RestAssuredService#loadObjects(java.util.Map, com.muzima.search.api.resource.Resource)
      */
     List<Searchable> loadObjects(final String searchString, final Resource resource, final File file)
             throws IOException;

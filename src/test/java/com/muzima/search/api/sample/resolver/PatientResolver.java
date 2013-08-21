@@ -17,6 +17,7 @@
 package com.muzima.search.api.sample.resolver;
 
 import java.io.IOException;
+import java.util.Map;
 
 public class PatientResolver extends AbstractResolver {
 
@@ -27,11 +28,12 @@ public class PatientResolver extends AbstractResolver {
     /**
      * Return the full REST resource based on the search string passed to the method.
      *
-     * @param searchString the search string
+     *
+     * @param resourceParams the search string
      * @return full URI to the REST resource
      */
     @Override
-    public String resolve(final String searchString) throws IOException {
-        return WEB_SERVER + WEB_CONTEXT + "ws/rest/v1/patient/" + searchString + REPRESENTATION;
+    public String resolve(final Map<String, String> resourceParams) throws IOException {
+        return WEB_SERVER + WEB_CONTEXT + "ws/rest/v1/patient" + REPRESENTATION + "&q=" + resourceParams.get("q");
     }
 }

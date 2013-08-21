@@ -18,6 +18,8 @@ package com.muzima.search.api.service.impl;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import com.jayway.jsonpath.InvalidPathException;
+import com.jayway.jsonpath.JsonPath;
 import com.muzima.search.api.filter.Filter;
 import com.muzima.search.api.internal.lucene.Indexer;
 import com.muzima.search.api.model.object.Searchable;
@@ -27,6 +29,7 @@ import com.muzima.search.api.service.RestAssuredService;
 import com.muzima.search.api.util.CollectionUtil;
 import com.muzima.search.api.util.FilenameUtil;
 import com.muzima.search.api.util.StringUtil;
+import net.minidev.json.JSONObject;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.search.BooleanClause;
@@ -35,15 +38,29 @@ import org.apache.lucene.search.TermQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
+import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.net.Proxy;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
+import static com.jayway.jsonpath.Criteria.where;
+import static com.jayway.jsonpath.Filter.filter;
 
 public class RestAssuredServiceImpl implements RestAssuredService {
 
@@ -80,33 +97,59 @@ public class RestAssuredServiceImpl implements RestAssuredService {
      * - short term solution: increase the page size
      * <p/>
      *
-     * @param searchString the string to filter object that from the REST resource.
-     * @param resource     the resource object which will describe how to index the json resource to lucene.
+     * @param resourceParams the parameters needed to construct the correct REST resource.
+     * @param resource       the resource object which will describe how to index the json resource to lucene.
      */
     @Override
-    public List<Searchable> loadObjects(final String searchString, final Resource resource) throws IOException {
-        InputStream inputStream = null;
-        HttpURLConnection connection = null;
-        try {
-            Resolver resolver = resource.getResolver();
-            URL url = new URL(resolver.resolve(searchString));
-            connection = (HttpURLConnection) url.openConnection();
-            if (proxy != null) {
-                connection = (HttpURLConnection) url.openConnection(proxy);
-            }
-            connection.setRequestMethod(GET);
-            connection.setConnectTimeout(timeout);
-            connection = resolver.authenticate(connection);
-            inputStream = connection.getInputStream();
-            return indexer.loadObjects(resource, inputStream);
-        } finally {
-            if (inputStream != null) {
-                inputStream.close();
-            }
-            if (connection != null) {
-                connection.disconnect();
-            }
+    public List<Searchable> loadObjects(final Map<String, String> resourceParams, final Resource resource)
+            throws IOException {
+        Resolver resolver = resource.getResolver();
+        String resourcePath = resolver.resolve(resourceParams);
+        return downloadResource(resourcePath, resource);
+    }
+
+    // Internal implementation of download process. The download will open connection to the REST resource and then
+    // download the content into the specified path. On the subsequent call, the method will follow the NEXT field in
+    // the REST resource if it is available :)
+    // See:
+    // * http://tools.ietf.org/html/rfc4287
+    // * http://tools.ietf.org/html/rfc5005
+    private List<Searchable> downloadResource(final String resourcePath, final Resource resource)
+            throws IOException {
+        List<Searchable> searchableList = new ArrayList<Searchable>();
+
+        URL url = new URL(resourcePath);
+        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+        if (proxy != null) {
+            connection = (HttpURLConnection) url.openConnection(proxy);
         }
+        connection.setRequestMethod(GET);
+        connection.setConnectTimeout(timeout);
+        Resolver resolver = resource.getResolver();
+        connection = resolver.authenticate(connection);
+
+        BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+
+        String inputLine;
+        // we need to cache the input stream and then follow the next link.
+        StringBuilder builder = new StringBuilder();
+        while ((inputLine = reader.readLine()) != null) {
+            builder.append(inputLine);
+        }
+        reader.close();
+
+        StringReader stringReader = new StringReader(builder.toString());
+        searchableList.addAll(indexer.loadObjects(resource, stringReader));
+        try {
+            List<Object> pagingInfo = JsonPath.read(builder.toString(), "$['links'][?(@.rel == 'next')]");
+            if (!CollectionUtil.isEmpty(pagingInfo)) {
+                String nextPath = JsonPath.read(pagingInfo.get(0), "$['uri']");
+                searchableList.addAll(downloadResource(nextPath, resource));
+            }
+        } catch (InvalidPathException e) {
+            logger.error("REST resource doesn't contains paging information. Exiting!");
+        }
+        return searchableList;
     }
 
     /**
@@ -115,32 +158,32 @@ public class RestAssuredServiceImpl implements RestAssuredService {
      * This method will load locally saved json payload and then apply the <code>searchString</code> to limit the data
      * that needs to get converted.
      *
-     * @param searchString the search string to filter object returned from the file.
+     * @param searchString the search string to filter the files to be loaded.
      * @param resource     the resource object which will describe how to index the json resource to lucene.
      * @param file         the file in the filesystem where the json resource is saved.
-     * @see RestAssuredService#loadObjects(String, com.muzima.search.api.resource.Resource)
+     * @see RestAssuredService#loadObjects(java.util.Map, com.muzima.search.api.resource.Resource)
      */
     @Override
     public List<Searchable> loadObjects(final String searchString, final Resource resource, final File file)
             throws IOException {
-        List<Searchable> searchables = new ArrayList<Searchable>();
+        List<Searchable> searchableList = new ArrayList<Searchable>();
         if (!file.isDirectory() && FilenameUtil.contains(file.getName(), searchString)) {
-            FileInputStream stream = null;
+            FileReader reader = null;
             try {
-                stream = new FileInputStream(file);
-                return indexer.loadObjects(resource, stream);
+                reader = new FileReader(file);
+                return indexer.loadObjects(resource, reader);
             } finally {
-                if (stream != null)
-                    stream.close();
+                if (reader != null)
+                    reader.close();
             }
         } else {
             File[] files = file.listFiles();
             if (files != null) {
                 for (File jsonFile : files)
-                    searchables.addAll(loadObjects(searchString, resource, jsonFile));
+                    searchableList.addAll(loadObjects(searchString, resource, jsonFile));
             }
         }
-        return searchables;
+        return searchableList;
     }
 
     /**
@@ -182,6 +225,7 @@ public class RestAssuredServiceImpl implements RestAssuredService {
     public Searchable getObject(final String key, final Resource resource) throws IOException {
         return indexer.getObject(key, resource);
     }
+
     @Override
     public Boolean objectExists(final String key, final Resource resource) throws IOException {
         return indexer.objectExists(key, resource);
@@ -300,7 +344,7 @@ public class RestAssuredServiceImpl implements RestAssuredService {
      * recreate unique key query to find the entry in the local lucene repository. If no unique searchable field is
      * specified in the resource configuration, this method will use all searchable index to find the entry.
      *
-     * @param objects   the objects to be removed if the objects exist.
+     * @param objects  the objects to be removed if the objects exist.
      * @param resource the resource object which will describe how to index the json resource to lucene.
      */
     @Override
@@ -320,7 +364,7 @@ public class RestAssuredServiceImpl implements RestAssuredService {
      * _resource : the resource configuration used to convert the json to lucene
      * </pre>
      *
-     * @param objects   the objects to be created
+     * @param objects  the objects to be created
      * @param resource the resource object which will describe how to index the json resource to lucene.
      */
     @Override
@@ -335,7 +379,7 @@ public class RestAssuredServiceImpl implements RestAssuredService {
      * repository. If the changes are performed on the unique searchable field, this method will end up creating a new
      * entry in the lucene local repository.
      *
-     * @param objects   the objects to be updated
+     * @param objects  the objects to be updated
      * @param resource the resource object which will describe how to index the json resource to lucene.
      */
     @Override

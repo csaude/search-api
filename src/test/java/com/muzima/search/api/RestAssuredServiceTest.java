@@ -20,6 +20,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.jayway.jsonpath.JsonPath;
 import com.muzima.search.api.context.ServiceContext;
+import com.muzima.search.api.exception.ServiceException;
 import com.muzima.search.api.model.object.Searchable;
 import com.muzima.search.api.model.resolver.Resolver;
 import com.muzima.search.api.model.serialization.Algorithm;
@@ -27,6 +28,7 @@ import com.muzima.search.api.module.JUnitModule;
 import com.muzima.search.api.module.SearchModule;
 import com.muzima.search.api.resource.ObjectResource;
 import com.muzima.search.api.resource.Resource;
+import com.muzima.search.api.resource.ResourceConstants;
 import com.muzima.search.api.resource.SearchableField;
 import com.muzima.search.api.sample.algorithm.PatientAlgorithm;
 import com.muzima.search.api.sample.domain.Patient;
@@ -46,8 +48,11 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public class RestAssuredServiceTest {
@@ -66,7 +71,7 @@ public class RestAssuredServiceTest {
 
     private static final String PATIENT_RESOURCE = "Patient Resource";
 
-    private static final String INJECTED_PATIENT_RESOURCE = "Injected Patient Resource";
+    private static final String SEARCH_PATIENT_RESOURCE = "Search Patient Resource";
 
     private static final String CORPUS_CONFIGURATION_FILE = "sample/j2l/patient-template.j2l";
 
@@ -93,40 +98,65 @@ public class RestAssuredServiceTest {
         Assert.assertNotNull(patientGivenName);
     }
 
+    protected void registerResources(final Injector injector) throws Exception {
+        URL url = RestAssuredServiceTest.class.getResource(CORPUS_CONFIGURATION_FILE);
+        List<Object> configurations = JsonPath.read(url, "$['configurations']");
+
+        for (Object configuration : configurations) {
+            String name = JsonPath.read(configuration, ResourceConstants.RESOURCE_NAME);
+            String root = JsonPath.read(configuration, ResourceConstants.ROOT_NODE);
+
+            String searchableName = JsonPath.read(configuration, ResourceConstants.SEARCHABLE_CLASS);
+            Class searchableClass = Class.forName(searchableName);
+            Searchable searchable = (Searchable) searchableClass.newInstance();
+
+            String algorithmName = JsonPath.read(configuration, ResourceConstants.ALGORITHM_CLASS);
+            Class algorithmClass = Class.forName(algorithmName);
+            Algorithm algorithm = (Algorithm) injector.getInstance(algorithmClass);
+
+            String resolverName = JsonPath.read(configuration, ResourceConstants.RESOLVER_CLASS);
+            Class resolverClass = Class.forName(resolverName);
+            Resolver resolver = (Resolver) injector.getInstance(resolverClass);
+
+            List<String> uniqueFields = new ArrayList<String>();
+            String uniqueField = JsonPath.read(configuration, ResourceConstants.UNIQUE_FIELD);
+            if (uniqueField != null) {
+                uniqueFields = Arrays.asList(StringUtil.split(uniqueField, ","));
+            }
+            Resource resource = new ObjectResource(name, root, searchable.getClass(), algorithm, resolver);
+            Object searchableFields = JsonPath.read(configuration, ResourceConstants.SEARCHABLE_FIELD);
+            if (searchableFields instanceof Map) {
+                Map map = (Map) searchableFields;
+                for (Object fieldName : map.keySet()) {
+                    Boolean unique = Boolean.FALSE;
+                    if (uniqueFields.contains(fieldName.toString())) {
+                        unique = Boolean.TRUE;
+                    }
+                    String expression = map.get(fieldName).toString();
+                    resource.addFieldDefinition(fieldName.toString(), expression, unique);
+                }
+            }
+            context = injector.getInstance(ServiceContext.class);
+            context.registerResource(resource.getName(), resource);
+        }
+    }
+
     @Before
     public void prepare() throws Exception {
         Injector injector = Guice.createInjector(new SearchModule(), new JUnitModule());
-        context = injector.getInstance(ServiceContext.class);
-
-        URL configurationUri = RestAssuredServiceTest.class.getResource(CORPUS_CONFIGURATION_FILE);
-        context.registerResources(new File(configurationUri.getPath()));
-
-        Resource resource = context.getResource(PATIENT_RESOURCE);
-        Assert.assertNotNull(resource);
-
-        Algorithm patientAlgorithm = injector.getInstance(PatientAlgorithm.class);
-        Resolver patientResolver = injector.getInstance(PatientResolver.class);
-        Resource injectedResource = new ObjectResource(
-                INJECTED_PATIENT_RESOURCE, resource.getRootNode(),
-                Patient.class, patientAlgorithm, patientResolver);
-        for (SearchableField searchableField : resource.getSearchableFields()) {
-            injectedResource.addFieldDefinition(
-                    searchableField.getName(),
-                    searchableField.getExpression(),
-                    searchableField.isUnique());
-        }
-        context.registerResource(INJECTED_PATIENT_RESOURCE, injectedResource);
 
         service = injector.getInstance(RestAssuredService.class);
         Assert.assertNotNull(service);
 
-        // read the corpus location
-        URL corpus = RestAssuredServiceTest.class.getResource(CORPUS_DIRECTORY);
+        registerResources(injector);
+        context = injector.getInstance(ServiceContext.class);
+        Resource patientResource = context.getResource(PATIENT_RESOURCE);
+        Assert.assertNotNull(patientResource);
 
-        // load and save the corpus information into lucene database
-        List<Searchable> searchables = service.loadObjects(StringUtil.EMPTY, resource, new File(corpus.getPath()));
+        URL corpus = RestAssuredServiceTest.class.getResource(CORPUS_DIRECTORY);
+        List<Searchable> searchables = service.loadObjects(StringUtil.EMPTY, patientResource, new File(corpus.getPath()));
         for (Searchable searchable : searchables) {
-            service.createObjects(Arrays.asList(searchable), resource);
+            service.createObjects(Arrays.asList(searchable), patientResource);
         }
     }
 
@@ -144,7 +174,7 @@ public class RestAssuredServiceTest {
 
     /**
      * @verifies load objects based on the resource description
-     * @see RestAssuredService#loadObjects(String, com.muzima.search.api.resource.Resource)
+     * @see RestAssuredService#loadObjects(java.util.Map, com.muzima.search.api.resource.Resource)
      */
     @Test
     public void loadObjects_shouldLoadObjectsBasedOnTheResourceDescription() throws Exception {
@@ -154,8 +184,10 @@ public class RestAssuredServiceTest {
          * - At least a patient have name with letter "a" in the lucene repository
          */
         try {
-            Resource resource = context.getResource(INJECTED_PATIENT_RESOURCE);
-            List<Searchable> searchables = service.loadObjects("00006b1f-8bfb-4769-b443-ecf7eb908ab1", resource);
+            Resource resource = context.getResource(SEARCH_PATIENT_RESOURCE);
+            Map<String, String> resourceParams = new HashMap<String, String>();
+            resourceParams.put("q", "Tho");
+            List<Searchable> searchables = service.loadObjects(resourceParams, resource);
             for (Searchable searchable : searchables) {
                 logger.info("Patient uuid: {}", ((Patient)searchable).getUuid());
             }

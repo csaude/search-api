@@ -15,6 +15,22 @@
                     "middleName": "$['personName.middleName']",
                     "familyName": "$['personName.familyName']"
                 }
+        },
+        {
+            "resource.name": "Search Patient Resource",
+            "node.root": "$['results']",
+            "resource.object": "com.muzima.search.api.sample.domain.Patient",
+            "algorithm.class": "com.muzima.search.api.sample.algorithm.PatientAlgorithm",
+            "resolver.class": "com.muzima.search.api.sample.resolver.PatientResolver",
+            "field.unique": "uuid",
+            "field.searchable":
+                {
+                    "uuid": "$['uuid']",
+                    "identifier": "$['patientIdentifier.identifier']",
+                    "givenName": "$['personName.givenName']",
+                    "middleName": "$['personName.middleName']",
+                    "familyName": "$['personName.familyName']"
+                }
         }
     ]
 }

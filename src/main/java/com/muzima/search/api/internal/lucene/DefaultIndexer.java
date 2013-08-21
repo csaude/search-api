@@ -48,8 +48,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -81,7 +81,7 @@ public class DefaultIndexer implements Indexer {
 
     private static final String DEFAULT_FIELD_RESOURCE = "_resource";
 
-    private static final Integer DEFAULT_MAX_DOCUMENTS = 20;
+    private static final Integer DEFAULT_MAX_DOCUMENTS = 1;
 
     @Inject
     protected DefaultIndexer(final @Named("configuration.lucene.document.key") String defaultField,
@@ -238,8 +238,11 @@ public class DefaultIndexer implements Indexer {
     private List<Document> findDocuments(final Query query) throws IOException {
         List<Document> documents = new ArrayList<Document>();
         IndexSearcher searcher = getIndexSearcher();
+        // Iterating over all hits:
+        // * http://stackoverflow.com/questions/3300265/lucene-3-iterating-over-all-hits
         if (searcher != null) {
-            TopDocs docs = searcher.search(query, DEFAULT_MAX_DOCUMENTS);
+            TopDocs countDocs = searcher.search(query, DEFAULT_MAX_DOCUMENTS);
+            TopDocs docs = searcher.search(query, countDocs.totalHits > 0 ? countDocs.totalHits : DEFAULT_MAX_DOCUMENTS);
             ScoreDoc[] hits = docs.scoreDocs;
             for (ScoreDoc hit : hits) {
                 documents.add(searcher.doc(hit.doc));
@@ -340,10 +343,9 @@ public class DefaultIndexer implements Indexer {
     }
 
     @Override
-    public List<Searchable> loadObjects(final Resource resource, final InputStream inputStream)
+    public List<Searchable> loadObjects(final Resource resource, final Reader reader)
             throws IOException {
         List<Searchable> searchables = new ArrayList<Searchable>();
-        InputStreamReader reader = new InputStreamReader(inputStream);
         String json = StreamUtil.readAsString(reader);
         Object jsonObject = JsonPath.read(json, resource.getRootNode());
         if (jsonObject instanceof JSONArray) {

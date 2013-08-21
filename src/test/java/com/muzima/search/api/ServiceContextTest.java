@@ -95,10 +95,7 @@ public class ServiceContextTest {
         URL url = ServiceContextTest.class.getResource("sample/j2l");
         File resourceFile = new File(url.getPath());
         serviceContext.registerResources(resourceFile);
-
-        File[] files = resourceFile.listFiles(new ResourceFileFilter());
-        Assert.assertNotNull(files);
-        Assert.assertEquals(files.length, serviceContext.getResources().size());
+        Assert.assertEquals(2, serviceContext.getResources().size());
     }
 
     /**

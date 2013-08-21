@@ -23,6 +23,7 @@ import com.muzima.search.api.model.serialization.Algorithm;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 public class ObjectResource implements Resource {
 
@@ -230,11 +231,11 @@ public class ObjectResource implements Resource {
      * Get the URI for the resource where the api can retrieve data. Default implementation should delegate this call to
      * the <code>Resolver</code> class.
      *
-     * @param searchString the search term for the REST URI
+     * @param resourceParams the resource parameters for the REST URI
      * @return the full REST URI with the search string
      */
     @Override
-    public String getUri(final String searchString) throws IOException {
-        return getResolver().resolve(searchString);
+    public String getUri(final Map<String, String> resourceParams) throws IOException {
+        return getResolver().resolve(resourceParams);
     }
 }
