@@ -84,7 +84,7 @@ public class DefaultIndexer implements Indexer {
     private static final Integer DEFAULT_MAX_DOCUMENTS = 1;
 
     @Inject
-    protected DefaultIndexer(final @Named("configuration.lucene.document.key") String defaultField,
+    protected DefaultIndexer(final @Named("configuration.lucene.field.key") String defaultField,
                              final Version version, final Analyzer analyzer) {
         this.defaultField = defaultField;
         this.parser = new QueryParser(version, defaultField, analyzer);
@@ -104,6 +104,8 @@ public class DefaultIndexer implements Indexer {
      */
 
     private IndexWriter getIndexWriter() throws IOException {
+        // might need to make this a synchronized call.
+        // or allowing the caller to get new index searcher every time.
         if (indexWriter == null) {
             indexWriter = writerProvider.get();
         }
@@ -115,6 +117,8 @@ public class DefaultIndexer implements Indexer {
     }
 
     private IndexSearcher getIndexSearcher() throws IOException {
+        // might need to make this a synchronized call.
+        // or allowing the caller to get new index searcher every time.
         try {
             if (indexSearcher == null) {
                 indexSearcher = searcherProvider.get();

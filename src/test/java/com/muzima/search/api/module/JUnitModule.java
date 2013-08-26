@@ -39,7 +39,7 @@ public class JUnitModule extends AbstractModule {
                 .annotatedWith(Names.named("configuration.lucene.directory"))
                 .toInstance(tmpDirectory + LUCENE_DIRECTORY);
         bind(String.class)
-                .annotatedWith(Names.named("configuration.lucene.document.key"))
+                .annotatedWith(Names.named("configuration.lucene.field.key"))
                 .toInstance("uuid");
 
         bind(Boolean.class)
@@ -56,9 +56,18 @@ public class JUnitModule extends AbstractModule {
                 .toInstance("http://140.182.15.70:8081/");
         // ampath test server specific bindings
 
-        bind(String.class).annotatedWith(Names.named("configuration.lucene.encryption")).toInstance("AES/ECB/PKCS5Padding");
-        bind(Boolean.class).annotatedWith(Names.named("configuration.lucene.usingEncryption")).toInstance(true);
-        bind(Boolean.class).annotatedWith(Names.named("configuration.lucene.usingCompression")).toInstance(false);
+        bind(String.class)
+                .annotatedWith(Names.named("configuration.lucene.encryption"))
+                .toInstance("AES/ECB/PKCS5Padding");
+        bind(String.class)
+                .annotatedWith(Names.named("configuration.lucene.encryption.key"))
+                .toInstance("this-is-an-example-of-a-secure-key");
+        bind(Boolean.class)
+                .annotatedWith(Names.named("configuration.lucene.usingEncryption"))
+                .toInstance(true);
+        bind(Boolean.class)
+                .annotatedWith(Names.named("configuration.lucene.usingCompression"))
+                .toInstance(false);
 
     }
 }

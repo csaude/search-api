@@ -29,7 +29,6 @@ import com.muzima.search.api.service.RestAssuredService;
 import com.muzima.search.api.util.CollectionUtil;
 import com.muzima.search.api.util.FilenameUtil;
 import com.muzima.search.api.util.StringUtil;
-import net.minidev.json.JSONObject;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryParser.ParseException;
 import org.apache.lucene.search.BooleanClause;
@@ -38,29 +37,19 @@ import org.apache.lucene.search.TermQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
 import java.io.StringReader;
 import java.net.HttpURLConnection;
 import java.net.Proxy;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
-
-import static com.jayway.jsonpath.Criteria.where;
-import static com.jayway.jsonpath.Filter.filter;
 
 public class RestAssuredServiceImpl implements RestAssuredService {
 
@@ -117,7 +106,25 @@ public class RestAssuredServiceImpl implements RestAssuredService {
     private List<Searchable> downloadResource(final String resourcePath, final Resource resource)
             throws IOException {
         List<Searchable> searchableList = new ArrayList<Searchable>();
+        String resourcePayload = readResource(resourcePath, resource);
+        List<Object> pagingInfo = Collections.emptyList();
+        do {
+            StringReader stringReader = new StringReader(resourcePayload);
+            searchableList.addAll(indexer.loadObjects(resource, stringReader));
+            try {
+                pagingInfo = JsonPath.read(resourcePayload, "$['links'][?(@.rel == 'next')]");
+                if (!CollectionUtil.isEmpty(pagingInfo)) {
+                    String nextPath = JsonPath.read(pagingInfo.get(0), "$['uri']");
+                    resourcePayload = readResource(nextPath, resource);
+                }
+            } catch (InvalidPathException e) {
+                logger.error("REST resource doesn't contains paging information. Exiting!");
+            }
+        } while (!CollectionUtil.isEmpty(pagingInfo));
+        return searchableList;
+    }
 
+    private String readResource(final String resourcePath, final Resource resource) throws IOException {
         URL url = new URL(resourcePath);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         if (proxy != null) {
@@ -138,18 +145,7 @@ public class RestAssuredServiceImpl implements RestAssuredService {
         }
         reader.close();
 
-        StringReader stringReader = new StringReader(builder.toString());
-        searchableList.addAll(indexer.loadObjects(resource, stringReader));
-        try {
-            List<Object> pagingInfo = JsonPath.read(builder.toString(), "$['links'][?(@.rel == 'next')]");
-            if (!CollectionUtil.isEmpty(pagingInfo)) {
-                String nextPath = JsonPath.read(pagingInfo.get(0), "$['uri']");
-                searchableList.addAll(downloadResource(nextPath, resource));
-            }
-        } catch (InvalidPathException e) {
-            logger.error("REST resource doesn't contains paging information. Exiting!");
-        }
-        return searchableList;
+        return builder.toString();
     }
 
     /**

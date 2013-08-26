@@ -50,7 +50,7 @@ public class DirectoryProvider implements SearchProvider<Directory> {
     Boolean usingEncryption;
 
     @Inject(optional = true)
-    @Named("configuration.lucene.document.key")
+    @Named("configuration.lucene.encryption.key")
     String password;
 
     @Inject(optional = true)
@@ -75,11 +75,11 @@ public class DirectoryProvider implements SearchProvider<Directory> {
                 logger.debug("Using encryption with inject - {}", encryption);
             }
 
-            DataEncryptor enc = null;
+            DataEncryptor enc;
             try {
                 enc = new DataEncryptor(encryption, password, salt, 128, false);
             } catch (GeneralSecurityException e) {
-                e.printStackTrace();
+                throw new IOException("Unable to create data encryptor.", e);
             }
             DataDecryptor dec = new DataDecryptor(password, salt, false);
 
