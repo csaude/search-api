@@ -19,6 +19,7 @@ package com.muzima.search.api.internal.lucene;
 import com.muzima.search.api.model.object.Searchable;
 import com.muzima.search.api.resource.Resource;
 import org.apache.lucene.queryParser.ParseException;
+import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.Query;
 
 import java.io.IOException;
@@ -40,9 +41,15 @@ public interface Indexer {
 
     <T> List<T> getObjects(final Query query, final Class<T> clazz) throws IOException;
 
+    <T> List<T> getObjects(final Query query, final Class<T> clazz,
+                           final Integer page, final Integer pageSize) throws IOException;
+
     <T> Integer countObjects(final Query query, final Class<T> clazz) throws IOException;
 
     List<Searchable> getObjects(final Query query, final Resource resource) throws IOException;
+
+    List<Searchable> getObjects(final Query query, final Resource resource,
+                                final Integer page, final Integer pageSize) throws IOException;
 
     Integer countObjects(final Query query, final Resource resource) throws IOException;
 

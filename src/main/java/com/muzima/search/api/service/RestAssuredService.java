@@ -29,16 +29,11 @@ import java.util.Map;
 public interface RestAssuredService {
 
     /**
-     * Load object described using the <code>resource</code> into local lucene repository. This method will use the URI
-     * resolver to resolve the URI of the REST resources and then apply the <code>searchString</code> to limit the data
-     * which will be loaded into the local lucene repository.
+     * Convert downloaded remote REST resource to the correct object representation.
      * <p/>
-     * Internally, this method will also add the following field:
-     * <pre>
-     * _class : the expected representation of the json when serialized
-     * _resource : the resource configuration used to convert the json to lucene
-     * _date_indexed : date and time when the json was indexed
-     * </pre>
+     * This method will use the URI resolver to resolve the URI of the REST resources and then apply the
+     * <code>searchString</code> to limit the data that needs to get converted.
+     * <p/>
      *
      * @param resourceParams the parameters needed to construct the correct REST resource.
      * @param resource       the resource object which will describe how to index the json resource to lucene.
@@ -47,14 +42,14 @@ public interface RestAssuredService {
     List<Searchable> loadObjects(final Map<String, String> resourceParams, final Resource resource) throws IOException;
 
     /**
-     * Load object described using the <code>resource</code> into local lucene repository. This method will load locally
-     * saved json payload and then apply the <code>searchString</code> to limit the data which will be loaded into the
-     * local lucene repository.
+     * Convert JSON from local file to the correct object representation.
+     * <p/>
+     * This method will load locally saved json payload and then apply the <code>searchString</code> to limit the data
+     * that needs to get converted.
      *
-     * @param searchString the search string to filter object returned from the file.
+     * @param searchString the search string to filter the files to be loaded.
      * @param resource     the resource object which will describe how to index the json resource to lucene.
      * @param file         the file in the filesystem where the json resource is saved.
-     * @should load object from filesystem based on the resource description
      * @see RestAssuredService#loadObjects(java.util.Map, com.muzima.search.api.resource.Resource)
      */
     List<Searchable> loadObjects(final String searchString, final Resource resource, final File file)
@@ -69,12 +64,12 @@ public interface RestAssuredService {
      * each resource and then perform the lucene query for that resource. If the resource doesn't specify unique
      * searchable field, all searchable fields for that resource will be used for searching.
      *
-     * @param key   the key to distinguish the object
-     * @param clazz the expected return type of the object
-     * @return object with matching key and clazz or null
-     * @should return object with matching key and type
-     * @should return null when no object match the key and type
-     * @should throw IOException if the key and class unable to return unique object
+     * @param key   the key to distinguish the object.
+     * @param clazz the expected return type of the object.
+     * @return object with matching key and clazz or null.
+     * @should return object with matching key and type.
+     * @should return null when no object match the key and type.
+     * @should throw IOException if the key and class unable to return unique object.
      */
     <T> T getObject(final String key, final Class<T> clazz) throws IOException;
 
@@ -88,12 +83,12 @@ public interface RestAssuredService {
      * fields and passing the key as the value. If the resource doesn't specify unique searchable field, all
      * searchable fields for that resource will be used for searching.
      *
-     * @param key      the key to distinguish the object
+     * @param key      the key to distinguish the object.
      * @param resource the resource object which will describe how to index the json resource to lucene.
-     * @return object with matching key and clazz or null
-     * @should return object with matching key
-     * @should return null when no object match the key
-     * @should throw IOException if the key and resource unable to return unique object
+     * @return object with matching key and clazz or null.
+     * @should return object with matching key.
+     * @should return null when no object match the key.
+     * @should throw IOException if the key and resource unable to return unique object.
      */
     Searchable getObject(final String key, final Resource resource) throws IOException;
 
@@ -103,29 +98,33 @@ public interface RestAssuredService {
      * Search for objects with matching <code>filter</code> and <code>clazz</code> type from the local repository.
      * This method will return list of all matching object or empty list if no object match the search query.
      *
-     *
-     * @param filters the search filter to limit the number of returned object
-     * @param clazz   the expected return type of the object
-     * @return list of all object with matching <code>query</code> and <code>clazz</code> or empty list
-     * @should return all object matching the search query string and class
-     * @should return empty list when no object match the search query and class
+     * @param filters the search filter to limit the number of returned object.
+     * @param clazz   the expected return type of the object.
+     * @return list of all object with matching <code>query</code> and <code>clazz</code> or empty list.
+     * @should return all object matching the search query string and class.
+     * @should return empty list when no object match the search query and class.
      */
     <T> List<T> getObjects(final List<Filter> filters, final Class<T> clazz) throws IOException;
+
+    <T> List<T> getObjects(final List<Filter> filters, final Class<T> clazz,
+                           final Integer page, final Integer pageSize) throws IOException;
 
     <T> Integer countObjects(final List<Filter> filters, final Class<T> clazz) throws IOException;
 
     /**
-     * Search for objects with matching <code>filters</code> and <code>resource</code> type from the local repository.
+     * Search for objects with matching <code>filter</code> and <code>resource</code> type from the local repository.
      * This method will return list of all matching object or empty list if no object match the search query.
      *
-     *
-     * @param filters  the search filter to limit the number of returned object
-     * @param resource the resource descriptor used to register the object
-     * @return list of all object with matching <code>query</code> and <code>resource</code> or empty list
-     * @should return all object matching the search query and resource
-     * @should return empty list when no object match the search query and resource
+     * @param filters  the search filter to limit the number of returned object.
+     * @param resource the resource descriptor used to register the object.
+     * @return list of all object with matching <code>query</code> and <code>resource</code> or empty list.
+     * @should return all object matching the search query and resource.
+     * @should return empty list when no object match the search query and resource.
      */
     List<Searchable> getObjects(final List<Filter> filters, final Resource resource) throws IOException;
+
+    List<Searchable> getObjects(final List<Filter> filters, final Resource resource,
+                                final Integer page, final Integer pageSize) throws IOException;
 
     Integer countObjects(final List<Filter> filters, final Resource resource) throws IOException;
 
@@ -133,11 +132,11 @@ public interface RestAssuredService {
      * Search for objects with matching <code>searchString</code> and <code>clazz</code> type from the local repository.
      * This method will return list of all matching object or empty list if no object match the search string.
      *
-     * @param searchString the search string to limit the number of returned object
-     * @param clazz        the expected return type of the object
-     * @return list of all object with matching <code>searchString</code> and <code>clazz</code> or empty list
-     * @should return all object matching the search string and class
-     * @should return empty list when no object match the search string and class
+     * @param clazz        the expected return type of the object.
+     * @param searchString the search string to limit the number of returned object.
+     * @return list of all object with matching <code>searchString</code> and <code>clazz</code> or empty list.
+     * @should return all object matching the search string and class.
+     * @should return empty list when no object match the search string and class.
      */
     <T> List<T> getObjects(final String searchString, final Class<T> clazz) throws ParseException, IOException;
 
@@ -146,11 +145,11 @@ public interface RestAssuredService {
      * repository. This method will return list of all matching object or empty list if no object match the search
      * string.
      *
-     * @param searchString the search string to limit the number of returned object
-     * @param resource     the resource descriptor used to register the object
-     * @return list of all object with matching <code>searchString</code> and <code>resource</code> or empty list
-     * @should return all object matching the search string and resource
-     * @should return empty list when no object match the search string and resource
+     * @param searchString the search string to limit the number of returned object.
+     * @param resource     the resource descriptor used to register the object.
+     * @return list of all object with matching <code>searchString</code> and <code>resource</code> or empty list.
+     * @should return all object matching the search string and resource.
+     * @should return empty list when no object match the search string and resource.
      */
     List<Searchable> getObjects(final String searchString, final Resource resource) throws ParseException, IOException;
 
@@ -163,31 +162,37 @@ public interface RestAssuredService {
      * recreate unique key query to find the entry in the local lucene repository. If no unique searchable field is
      * specified in the resource configuration, this method will use all searchable index to find the entry.
      *
-     * @param objects   the objects to be removed if the objects exist.
+     * @param objects  the objects to be removed if the objects exist.
      * @param resource the resource object which will describe how to index the json resource to lucene.
-     * @should remove an object from the internal index system
+     * @should remove an object from the internal index system.
      */
     void deleteObjects(final List<Searchable> objects, final Resource resource) throws IOException;
 
     /**
-     * Create instances of object in the local repository.
+     * Create instances of objects in the local repository.
      * <p/>
      * Internally, this method will serialize the object and using the resource configuration to create an entry in
      * the lucene local repository.
+     * <p/>
+     * Internally, this method will also add the following field:
+     * <pre>
+     * _class : the expected representation of the json when serialized
+     * _resource : the resource configuration used to convert the json to lucene
+     * </pre>
      *
-     * @param objects   the objects to be created.
+     * @param objects  the objects to be created
      * @param resource the resource object which will describe how to index the json resource to lucene.
      */
     void createObjects(final List<Searchable> objects, Resource resource) throws IOException;
 
     /**
-     * Update instances of object in the local repository.
+     * Update instances of objects in the local repository.
      * <p/>
      * Internally, this method will perform invalidation of the object and then recreate the object in the local lucene
      * repository. If the changes are performed on the unique searchable field, this method will end up creating a new
      * entry in the lucene local repository.
      *
-     * @param objects   the objects to be updated.
+     * @param objects  the objects to be updated
      * @param resource the resource object which will describe how to index the json resource to lucene.
      */
     void updateObjects(final List<Searchable> objects, Resource resource) throws IOException;

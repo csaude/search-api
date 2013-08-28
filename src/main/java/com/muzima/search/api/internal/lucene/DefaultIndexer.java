@@ -48,7 +48,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
@@ -256,6 +255,34 @@ public class DefaultIndexer implements Indexer {
     }
 
     /**
+     * Search the local lucene repository for documents with similar information with information inside the
+     * <code>query</code>. Search can return multiple documents with similar information or empty list when no
+     * document have similar information with the <code>query</code>.
+     *
+     * @param query the lucene query.
+     * @param page the page number.
+     * @param pageSize the size of the page.
+     * @return objects with similar information with the query.
+     * @throws IOException when the search encounter error.
+     */
+    private List<Document> findDocuments(final Query query, final Integer page, Integer pageSize) throws IOException {
+        List<Document> documents = new ArrayList<Document>();
+        IndexSearcher searcher = getIndexSearcher();
+        // Iterating over all hits:
+        // * http://stackoverflow.com/questions/3300265/lucene-3-iterating-over-all-hits
+        if (searcher != null) {
+            TopDocs countDocs = searcher.search(query, DEFAULT_MAX_DOCUMENTS);
+            TopDocs docs = searcher.search(query, countDocs.totalHits > 0 ? countDocs.totalHits : DEFAULT_MAX_DOCUMENTS);
+            ScoreDoc[] hits = docs.scoreDocs;
+            for (int i = (pageSize * (page - 1)); i < pageSize * page; i++) {
+                ScoreDoc hit = hits[i];
+                documents.add(searcher.doc(hit.doc));
+            }
+        }
+        return documents;
+    }
+
+    /**
      * Write json representation of a single object as a single document entry inside Lucene index.
      *
      * @param jsonObject the json object to be written to the index
@@ -306,7 +333,6 @@ public class DefaultIndexer implements Indexer {
      * @param jsonObject  the json object to be deleted.
      * @param resource    the resource definition used to register the json to lucene index.
      * @param indexWriter the index writer used to delete the index.
-     * @throws ParseException when the json can't be used to create a query to identify the correct lucene index.
      * @throws IOException    when other error happens during the deletion process.
      */
     private void deleteObject(final Object jsonObject, final Resource resource, final IndexWriter indexWriter)
@@ -335,7 +361,6 @@ public class DefaultIndexer implements Indexer {
      * @param jsonObject  the json object to be updated.
      * @param resource    the resource definition used to register the json to lucene index.
      * @param indexWriter the index writer used to delete the index.
-     * @throws ParseException when the json can't be used to create a query to identify the correct lucene index.
      * @throws IOException    when other error happens during the deletion process.
      */
     private void updateObject(final Object jsonObject, final Resource resource, final IndexWriter indexWriter)
@@ -349,18 +374,18 @@ public class DefaultIndexer implements Indexer {
     @Override
     public List<Searchable> loadObjects(final Resource resource, final Reader reader)
             throws IOException {
-        List<Searchable> searchables = new ArrayList<Searchable>();
+        List<Searchable> searchableList = new ArrayList<Searchable>();
         String json = StreamUtil.readAsString(reader);
         Object jsonObject = JsonPath.read(json, resource.getRootNode());
         if (jsonObject instanceof JSONArray) {
             JSONArray array = (JSONArray) jsonObject;
             for (Object element : array) {
-                searchables.add(resource.deserialize(element.toString()));
+                searchableList.add(resource.deserialize(element.toString()));
             }
         } else if (jsonObject instanceof JSONObject) {
-            searchables.add(resource.deserialize(jsonObject.toString()));
+            searchableList.add(resource.deserialize(jsonObject.toString()));
         }
-        return searchables;
+        return searchableList;
     }
 
     @Override
@@ -486,9 +511,32 @@ public class DefaultIndexer implements Indexer {
     }
 
     @Override
-    public <T> Integer countObjects(final Query query, final Class<T> clazz) throws IOException {
+    public <T> List<T> getObjects(final Query query, final Class<T> clazz,
+                                  final Integer page, final Integer pageSize) throws IOException {
         List<T> objects = new ArrayList<T>();
 
+        BooleanQuery booleanQuery = new BooleanQuery();
+        booleanQuery.add(createClassQuery(clazz), BooleanClause.Occur.MUST);
+        if (query != null) {
+            booleanQuery.add(query, BooleanClause.Occur.MUST);
+        }
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("Query getObject(String, Class): {}", booleanQuery.toString());
+        }
+
+        List<Document> documents = findDocuments(booleanQuery, page, pageSize);
+        for (Document document : documents) {
+            String resourceName = document.get(DEFAULT_FIELD_RESOURCE);
+            Resource resource = getResourceRegistry().get(resourceName);
+            String json = document.get(DEFAULT_FIELD_JSON);
+            objects.add(clazz.cast(resource.deserialize(json)));
+        }
+        return objects;
+    }
+
+    @Override
+    public <T> Integer countObjects(final Query query, final Class<T> clazz) throws IOException {
         BooleanQuery booleanQuery = new BooleanQuery();
         booleanQuery.add(createClassQuery(clazz), BooleanClause.Occur.MUST);
         if (query != null) {
@@ -527,9 +575,30 @@ public class DefaultIndexer implements Indexer {
     }
 
     @Override
-    public Integer countObjects(final Query query, final Resource resource) throws IOException {
+    public List<Searchable> getObjects(final Query query, final Resource resource,
+                                       final Integer page, final Integer pageSize) throws IOException {
         List<Searchable> objects = new ArrayList<Searchable>();
 
+        BooleanQuery booleanQuery = new BooleanQuery();
+        booleanQuery.add(createResourceQuery(resource), BooleanClause.Occur.MUST);
+        if (query != null) {
+            booleanQuery.add(query, BooleanClause.Occur.MUST);
+        }
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("Query getObject(String, Class): {}", booleanQuery.toString());
+        }
+
+        List<Document> documents = findDocuments(booleanQuery, page, pageSize);
+        for (Document document : documents) {
+            String json = document.get(DEFAULT_FIELD_JSON);
+            objects.add(resource.deserialize(json));
+        }
+        return objects;
+    }
+
+    @Override
+    public Integer countObjects(final Query query, final Resource resource) throws IOException {
         BooleanQuery booleanQuery = new BooleanQuery();
         booleanQuery.add(createResourceQuery(resource), BooleanClause.Occur.MUST);
         if (query != null) {
@@ -575,11 +644,6 @@ public class DefaultIndexer implements Indexer {
     public List<Searchable> getObjects(final String searchString, final Resource resource)
             throws ParseException, IOException {
         List<Searchable> objects = new ArrayList<Searchable>();
-
-        // TODO: use checksum here.
-        // - add checksum field to the lucene instead of a new uuid field
-        // - add checksum field to the searchable object
-        // - add checksum value on the object from the algorithm
 
         BooleanQuery booleanQuery = new BooleanQuery();
         booleanQuery.add(createResourceQuery(resource), BooleanClause.Occur.MUST);
