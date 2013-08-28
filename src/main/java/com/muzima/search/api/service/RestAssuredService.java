@@ -140,6 +140,9 @@ public interface RestAssuredService {
      */
     <T> List<T> getObjects(final String searchString, final Class<T> clazz) throws ParseException, IOException;
 
+    <T> List<T> getObjects(final String searchString, final Class<T> clazz,
+                           final Integer page, final Integer pageSize) throws ParseException, IOException;
+
     /**
      * Search for objects with matching <code>searchString</code> and <code>resource</code> type from the local
      * repository. This method will return list of all matching object or empty list if no object match the search
@@ -152,6 +155,9 @@ public interface RestAssuredService {
      * @should return empty list when no object match the search string and resource.
      */
     List<Searchable> getObjects(final String searchString, final Resource resource) throws ParseException, IOException;
+
+    List<Searchable> getObjects(final String searchString, final Resource resource,
+                                final Integer page, final Integer pageSize) throws ParseException, IOException;
 
     /**
      * Remove objects based on the resource from the local repository. The method will determine if there's unique

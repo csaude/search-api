@@ -55,7 +55,13 @@ public interface Indexer {
 
     <T> List<T> getObjects(final String searchString, final Class<T> clazz) throws ParseException, IOException;
 
+    <T> List<T> getObjects(final String searchString, final Class<T> clazz,
+                           final Integer page, final Integer pageSize) throws ParseException, IOException;
+
     List<Searchable> getObjects(final String searchString, final Resource resource) throws ParseException, IOException;
+
+    List<Searchable> getObjects(final String searchString, final Resource resource,
+                                final Integer page, final Integer pageSize) throws ParseException, IOException;
 
     void deleteObjects(final List<Searchable> objects, final Resource resource) throws IOException;
 

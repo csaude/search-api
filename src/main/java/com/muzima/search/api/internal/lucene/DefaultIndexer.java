@@ -641,6 +641,32 @@ public class DefaultIndexer implements Indexer {
     }
 
     @Override
+    public <T> List<T> getObjects(final String searchString, final Class<T> clazz, final Integer page,
+                                  final Integer pageSize) throws ParseException, IOException {
+        List<T> objects = new ArrayList<T>();
+
+        BooleanQuery booleanQuery = new BooleanQuery();
+        booleanQuery.add(createClassQuery(clazz), BooleanClause.Occur.MUST);
+        if (!StringUtil.isEmpty(searchString)) {
+            Query query = parser.parse(searchString);
+            booleanQuery.add(query, BooleanClause.Occur.MUST);
+        }
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("Query getObjects(String, Class): {}", booleanQuery.toString());
+        }
+
+        List<Document> documents = findDocuments(booleanQuery, page, pageSize);
+        for (Document document : documents) {
+            String resourceName = document.get(DEFAULT_FIELD_RESOURCE);
+            Resource resource = getResourceRegistry().get(resourceName);
+            String json = document.get(DEFAULT_FIELD_JSON);
+            objects.add(clazz.cast(resource.deserialize(json)));
+        }
+        return objects;
+    }
+
+    @Override
     public List<Searchable> getObjects(final String searchString, final Resource resource)
             throws ParseException, IOException {
         List<Searchable> objects = new ArrayList<Searchable>();
@@ -657,6 +683,30 @@ public class DefaultIndexer implements Indexer {
         }
 
         List<Document> documents = findDocuments(booleanQuery);
+        for (Document document : documents) {
+            String json = document.get(DEFAULT_FIELD_JSON);
+            objects.add(resource.deserialize(json));
+        }
+        return objects;
+    }
+
+    @Override
+    public List<Searchable> getObjects(final String searchString, final Resource resource, final Integer page,
+                                       final Integer pageSize) throws ParseException, IOException {
+        List<Searchable> objects = new ArrayList<Searchable>();
+
+        BooleanQuery booleanQuery = new BooleanQuery();
+        booleanQuery.add(createResourceQuery(resource), BooleanClause.Occur.MUST);
+        if (!StringUtil.isEmpty(searchString)) {
+            Query query = parser.parse(searchString);
+            booleanQuery.add(query, BooleanClause.Occur.MUST);
+        }
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("Query getObjects(String, Resource): {}", booleanQuery.toString());
+        }
+
+        List<Document> documents = findDocuments(booleanQuery, page, pageSize);
         for (Document document : documents) {
             String json = document.get(DEFAULT_FIELD_JSON);
             objects.add(resource.deserialize(json));

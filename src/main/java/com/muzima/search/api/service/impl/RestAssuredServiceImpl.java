@@ -259,6 +259,12 @@ public class RestAssuredServiceImpl implements RestAssuredService {
         return indexer.getObjects(searchString, clazz);
     }
 
+    @Override
+    public <T> List<T> getObjects(final String searchString, final Class<T> clazz,
+                                  final Integer page, final Integer pageSize) throws ParseException, IOException {
+        return indexer.getObjects(searchString, clazz, page, pageSize);
+    }
+
     /**
      * {@inheritDoc}
      * @see RestAssuredService#getObjects(String, com.muzima.search.api.resource.Resource)
@@ -267,6 +273,12 @@ public class RestAssuredServiceImpl implements RestAssuredService {
     public List<Searchable> getObjects(final String searchString, final Resource resource)
             throws ParseException, IOException {
         return indexer.getObjects(searchString, resource);
+    }
+
+    @Override
+    public List<Searchable> getObjects(final String searchString, final Resource resource,
+                                       final Integer page, final Integer pageSize) throws ParseException, IOException {
+        return indexer.getObjects(searchString, resource, page, pageSize);
     }
 
     /**
