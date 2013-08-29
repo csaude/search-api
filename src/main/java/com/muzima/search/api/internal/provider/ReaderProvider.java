@@ -18,6 +18,7 @@ package com.muzima.search.api.internal.provider;
 
 import com.google.inject.Inject;
 import org.apache.lucene.index.IndexReader;
+import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.store.Directory;
 
 import java.io.IOException;
@@ -26,14 +27,22 @@ public class ReaderProvider implements SearchProvider<IndexReader> {
 
     private final SearchProvider<Directory> directoryProvider;
 
+    private SearchProvider<IndexWriter> writerProvider;
+
     @Inject
-    protected ReaderProvider(final SearchProvider<Directory> directoryProvider) {
+    protected ReaderProvider(final SearchProvider<IndexWriter> writerProvider,
+                             final SearchProvider<Directory> directoryProvider) {
+        this.writerProvider = writerProvider;
         this.directoryProvider = directoryProvider;
     }
 
     @Override
     public IndexReader get() throws IOException {
         Directory directory = directoryProvider.get();
+        if (!IndexReader.indexExists(directory)) {
+            IndexWriter writer = writerProvider.get();
+            writer.close();
+        }
         return IndexReader.open(directory);
     }
 }
