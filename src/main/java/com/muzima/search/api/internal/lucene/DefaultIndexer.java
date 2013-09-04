@@ -59,8 +59,6 @@ public class DefaultIndexer implements Indexer {
 
     private String defaultField;
 
-    private IndexWriter indexWriter;
-
     private IndexSearcher indexSearcher;
 
     @Inject
@@ -102,20 +100,13 @@ public class DefaultIndexer implements Indexer {
      * Private Getter and Setter section **
      */
 
-    private IndexWriter getIndexWriter() throws IOException {
+    private IndexWriter createIndexWriter() throws IOException {
         // might need to make this a synchronized call.
         // or allowing the caller to get new index searcher every time.
-        if (indexWriter == null) {
-            indexWriter = writerProvider.get();
-        }
-        return indexWriter;
+        return writerProvider.get();
     }
 
-    private void setIndexWriter(final IndexWriter indexWriter) {
-        this.indexWriter = indexWriter;
-    }
-
-    private IndexSearcher getIndexSearcher() throws IOException {
+    private IndexSearcher createIndexSearcher() throws IOException {
         // might need to make this a synchronized call.
         // or allowing the caller to get new index searcher every time.
         try {
@@ -128,31 +119,17 @@ public class DefaultIndexer implements Indexer {
         return indexSearcher;
     }
 
-    private void setIndexSearcher(final IndexSearcher indexSearcher) {
-        this.indexSearcher = indexSearcher;
+    private void commit(final IndexWriter writer) throws IOException {
+        if (writer != null) {
+            writer.commit();
+            writer.close();
+        }
+        indexSearcher = null;
     }
 
     /*
      * Low level lucene operation **
      */
-
-    /**
-     * Commit the changes in the index. This method will ensure that deletion, update and addition to the lucene index
-     * are written to the filesystem (persisted).
-     *
-     * @throws IOException when the operation encounter errors.
-     */
-    @Override
-    public void commit() throws IOException {
-        if (getIndexWriter() != null) {
-            getIndexWriter().commit();
-            getIndexWriter().close();
-        }
-        // remove the instance
-        // TODO: need a better to gracefully remove the instances
-        setIndexWriter(null);
-        setIndexSearcher(null);
-    }
 
     /**
      * Create a single term lucene query. The value for the query will be surrounded with single quote.
@@ -240,7 +217,7 @@ public class DefaultIndexer implements Indexer {
      */
     private List<Document> findDocuments(final Query query) throws IOException {
         List<Document> documents = new ArrayList<Document>();
-        IndexSearcher searcher = getIndexSearcher();
+        IndexSearcher searcher = createIndexSearcher();
         // Iterating over all hits:
         // * http://stackoverflow.com/questions/3300265/lucene-3-iterating-over-all-hits
         if (searcher != null) {
@@ -259,15 +236,15 @@ public class DefaultIndexer implements Indexer {
      * <code>query</code>. Search can return multiple documents with similar information or empty list when no
      * document have similar information with the <code>query</code>.
      *
-     * @param query the lucene query.
-     * @param page the page number.
+     * @param query    the lucene query.
+     * @param page     the page number.
      * @param pageSize the size of the page.
      * @return objects with similar information with the query.
      * @throws IOException when the search encounter error.
      */
     private List<Document> findDocuments(final Query query, final Integer page, Integer pageSize) throws IOException {
         List<Document> documents = new ArrayList<Document>();
-        IndexSearcher searcher = getIndexSearcher();
+        IndexSearcher searcher = createIndexSearcher();
         // Iterating over all hits:
         // * http://stackoverflow.com/questions/3300265/lucene-3-iterating-over-all-hits
         if (searcher != null) {
@@ -333,7 +310,7 @@ public class DefaultIndexer implements Indexer {
      * @param jsonObject  the json object to be deleted.
      * @param resource    the resource definition used to register the json to lucene index.
      * @param indexWriter the index writer used to delete the index.
-     * @throws IOException    when other error happens during the deletion process.
+     * @throws IOException when other error happens during the deletion process.
      */
     private void deleteObject(final Object jsonObject, final Resource resource, final IndexWriter indexWriter)
             throws IOException {
@@ -362,7 +339,7 @@ public class DefaultIndexer implements Indexer {
      * @param jsonObject  the json object to be updated.
      * @param resource    the resource definition used to register the json to lucene index.
      * @param indexWriter the index writer used to delete the index.
-     * @throws IOException    when other error happens during the deletion process.
+     * @throws IOException when other error happens during the deletion process.
      */
     private void updateObject(final Object jsonObject, final Resource resource, final IndexWriter indexWriter)
             throws IOException {
@@ -431,7 +408,7 @@ public class DefaultIndexer implements Indexer {
             logger.debug("Query objectExists(String, Class): {}", booleanQuery.toString());
         }
 
-        IndexSearcher searcher = getIndexSearcher();
+        IndexSearcher searcher = createIndexSearcher();
         TopDocs docs = searcher.search(booleanQuery, DEFAULT_MAX_DOCUMENTS);
         if (docs.totalHits > 1) {
             throw new IOException("Unable to uniquely identify an object using key: '" + key + "' in the repository.");
@@ -479,7 +456,7 @@ public class DefaultIndexer implements Indexer {
             logger.debug("Query objectExists(String,  Resource): {}", booleanQuery.toString());
         }
 
-        IndexSearcher searcher = getIndexSearcher();
+        IndexSearcher searcher = createIndexSearcher();
         TopDocs docs = searcher.search(booleanQuery, DEFAULT_MAX_DOCUMENTS);
         if (docs.totalHits > 1) {
             throw new IOException("Unable to uniquely identify an object using key: '" + key + "' in the repository.");
@@ -548,7 +525,7 @@ public class DefaultIndexer implements Indexer {
             logger.debug("Query getObject(String, Class): {}", booleanQuery.toString());
         }
 
-        IndexSearcher searcher = getIndexSearcher();
+        IndexSearcher searcher = createIndexSearcher();
         TopDocs docs = searcher.search(booleanQuery, DEFAULT_MAX_DOCUMENTS);
         return docs.totalHits;
     }
@@ -610,7 +587,7 @@ public class DefaultIndexer implements Indexer {
             logger.debug("Query getObject(String, Class): {}", booleanQuery.toString());
         }
 
-        IndexSearcher searcher = getIndexSearcher();
+        IndexSearcher searcher = createIndexSearcher();
         TopDocs docs = searcher.search(booleanQuery, DEFAULT_MAX_DOCUMENTS);
         return docs.totalHits;
     }
@@ -717,31 +694,34 @@ public class DefaultIndexer implements Indexer {
 
     @Override
     public void deleteObjects(final List<Searchable> objects, final Resource resource) throws IOException {
+        IndexWriter writer = createIndexWriter();
         for (Searchable object : objects) {
             String jsonString = resource.serialize(object);
             Object jsonObject = JsonPath.read(jsonString, "$");
-            deleteObject(jsonObject, resource, getIndexWriter());
+            deleteObject(jsonObject, resource, writer);
         }
-        commit();
+        commit(writer);
     }
 
     @Override
     public void createObjects(final List<Searchable> objects, final Resource resource) throws IOException {
+        IndexWriter writer = createIndexWriter();
         for (Searchable object : objects) {
             String jsonString = resource.serialize(object);
             Object jsonObject = JsonPath.read(jsonString, "$");
-            writeObject(jsonObject, resource, getIndexWriter());
+            writeObject(jsonObject, resource, writer);
         }
-        commit();
+        commit(writer);
     }
 
     @Override
     public void updateObjects(final List<Searchable> objects, final Resource resource) throws IOException {
+        IndexWriter writer = createIndexWriter();
         for (Searchable object : objects) {
             String jsonString = resource.serialize(object);
             Object jsonObject = JsonPath.read(jsonString, "$");
-            updateObject(jsonObject, resource, getIndexWriter());
+            updateObject(jsonObject, resource, writer);
         }
-        commit();
+        commit(writer);
     }
 }

@@ -20,7 +20,6 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.jayway.jsonpath.JsonPath;
 import com.muzima.search.api.context.ServiceContext;
-import com.muzima.search.api.exception.ServiceException;
 import com.muzima.search.api.model.object.Searchable;
 import com.muzima.search.api.model.resolver.Resolver;
 import com.muzima.search.api.model.serialization.Algorithm;
@@ -29,10 +28,7 @@ import com.muzima.search.api.module.SearchModule;
 import com.muzima.search.api.resource.ObjectResource;
 import com.muzima.search.api.resource.Resource;
 import com.muzima.search.api.resource.ResourceConstants;
-import com.muzima.search.api.resource.SearchableField;
-import com.muzima.search.api.sample.algorithm.PatientAlgorithm;
 import com.muzima.search.api.sample.domain.Patient;
-import com.muzima.search.api.sample.resolver.PatientResolver;
 import com.muzima.search.api.service.RestAssuredService;
 import com.muzima.search.api.util.StreamUtil;
 import com.muzima.search.api.util.StringUtil;
@@ -154,10 +150,8 @@ public class RestAssuredServiceTest {
         Assert.assertNotNull(patientResource);
 
         URL corpus = RestAssuredServiceTest.class.getResource(CORPUS_DIRECTORY);
-        List<Searchable> searchables = service.loadObjects(StringUtil.EMPTY, patientResource, new File(corpus.getPath()));
-        for (Searchable searchable : searchables) {
-            service.createObjects(Arrays.asList(searchable), patientResource);
-        }
+        List<Searchable> searchableList = service.loadObjects(StringUtil.EMPTY, patientResource, new File(corpus.getPath()));
+        service.createObjects(searchableList, patientResource);
     }
 
     @After

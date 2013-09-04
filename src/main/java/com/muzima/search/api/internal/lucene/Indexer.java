@@ -68,6 +68,4 @@ public interface Indexer {
     void createObjects(final List<Searchable> objects, Resource resource) throws IOException;
 
     void updateObjects(final List<Searchable> objects, Resource resource) throws IOException;
-
-    void commit() throws IOException;
 }
