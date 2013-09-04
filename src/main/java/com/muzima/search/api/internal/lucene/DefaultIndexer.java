@@ -347,11 +347,12 @@ public class DefaultIndexer implements Indexer {
 
         List<Document> documents = findDocuments(booleanQuery);
         // only delete object if we can uniquely identify the object
-        if (documents.size() == 1) {
+        //TODO comment out by Akani&Ruimin. There is a defect reported here: https://github.com/muzima/documentation/issues/132
+//        if (documents.size() == 1) {
             indexWriter.deleteDocuments(booleanQuery);
-        } else if (documents.size() > 1) {
-            throw new IOException("Unable to uniquely identify an object using the json object in the repository.");
-        }
+//        } else if (documents.size() > 1) {
+//            throw new IOException("Unable to uniquely identify an object using the json object in the repository.");
+//        }
     }
 
     /**
