@@ -16,14 +16,12 @@
 
 package com.muzima.search.api.internal.lucene;
 
+import com.muzima.search.api.filter.Filter;
 import com.muzima.search.api.model.object.Searchable;
 import com.muzima.search.api.resource.Resource;
 import org.apache.lucene.queryParser.ParseException;
-import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.Query;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Reader;
 import java.util.List;
 
@@ -39,19 +37,19 @@ public interface Indexer {
 
     Boolean objectExists(final String key, final Resource resource) throws IOException;
 
-    <T> List<T> getObjects(final Query query, final Class<T> clazz) throws IOException;
+    <T> List<T> getObjects(final List<Filter> filters, final Class<T> clazz) throws IOException;
 
-    <T> List<T> getObjects(final Query query, final Class<T> clazz,
+    <T> List<T> getObjects(final List<Filter> filters, final Class<T> clazz,
                            final Integer page, final Integer pageSize) throws IOException;
 
-    <T> Integer countObjects(final Query query, final Class<T> clazz) throws IOException;
+    <T> Integer countObjects(final List<Filter> filters, final Class<T> clazz) throws IOException;
 
-    List<Searchable> getObjects(final Query query, final Resource resource) throws IOException;
+    List<Searchable> getObjects(final List<Filter> filters, final Resource resource) throws IOException;
 
-    List<Searchable> getObjects(final Query query, final Resource resource,
+    List<Searchable> getObjects(final List<Filter> filters, final Resource resource,
                                 final Integer page, final Integer pageSize) throws IOException;
 
-    Integer countObjects(final Query query, final Resource resource) throws IOException;
+    Integer countObjects(final List<Filter> filters, final Resource resource) throws IOException;
 
     <T> List<T> getObjects(final String searchString, final Class<T> clazz) throws ParseException, IOException;
 

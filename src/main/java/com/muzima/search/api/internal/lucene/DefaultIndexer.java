@@ -19,6 +19,7 @@ package com.muzima.search.api.internal.lucene;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.jayway.jsonpath.JsonPath;
+import com.muzima.search.api.filter.Filter;
 import com.muzima.search.api.internal.provider.SearcherProvider;
 import com.muzima.search.api.internal.provider.WriterProvider;
 import com.muzima.search.api.model.object.Searchable;
@@ -43,6 +44,7 @@ import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
+import org.apache.lucene.search.WildcardQuery;
 import org.apache.lucene.util.Version;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -464,15 +466,28 @@ public class DefaultIndexer implements Indexer {
         return (docs.totalHits == 1);
     }
 
+    private void addFilters(final List<Filter> filters, final BooleanQuery booleanQuery) {
+        for (Filter filter : filters) {
+            String sanitizedValue = StringUtil.sanitize(StringUtil.lowerCase(filter.getFieldValue()));
+            if (!StringUtil.isEmpty(sanitizedValue)) {
+                if (sanitizedValue.contains("*") || sanitizedValue.contains("?")) {
+                    WildcardQuery wildcardQuery = new WildcardQuery(new Term(filter.getFieldName(), sanitizedValue));
+                    booleanQuery.add(wildcardQuery, BooleanClause.Occur.MUST);
+                } else {
+                    TermQuery termQuery = new TermQuery(new Term(filter.getFieldName(), sanitizedValue));
+                    booleanQuery.add(termQuery, BooleanClause.Occur.MUST);
+                }
+            }
+        }
+    }
+
     @Override
-    public <T> List<T> getObjects(final Query query, final Class<T> clazz) throws IOException {
+    public <T> List<T> getObjects(final List<Filter> filters, final Class<T> clazz) throws IOException {
         List<T> objects = new ArrayList<T>();
 
         BooleanQuery booleanQuery = new BooleanQuery();
         booleanQuery.add(createClassQuery(clazz), BooleanClause.Occur.MUST);
-        if (query != null) {
-            booleanQuery.add(query, BooleanClause.Occur.MUST);
-        }
+        addFilters(filters, booleanQuery);
 
         if (logger.isDebugEnabled()) {
             logger.debug("Query getObject(String, Class): {}", booleanQuery.toString());
@@ -489,15 +504,13 @@ public class DefaultIndexer implements Indexer {
     }
 
     @Override
-    public <T> List<T> getObjects(final Query query, final Class<T> clazz,
+    public <T> List<T> getObjects(final List<Filter> filters, final Class<T> clazz,
                                   final Integer page, final Integer pageSize) throws IOException {
         List<T> objects = new ArrayList<T>();
 
         BooleanQuery booleanQuery = new BooleanQuery();
         booleanQuery.add(createClassQuery(clazz), BooleanClause.Occur.MUST);
-        if (query != null) {
-            booleanQuery.add(query, BooleanClause.Occur.MUST);
-        }
+        addFilters(filters, booleanQuery);
 
         if (logger.isDebugEnabled()) {
             logger.debug("Query getObject(String, Class): {}", booleanQuery.toString());
@@ -514,12 +527,10 @@ public class DefaultIndexer implements Indexer {
     }
 
     @Override
-    public <T> Integer countObjects(final Query query, final Class<T> clazz) throws IOException {
+    public <T> Integer countObjects(final List<Filter> filters, final Class<T> clazz) throws IOException {
         BooleanQuery booleanQuery = new BooleanQuery();
         booleanQuery.add(createClassQuery(clazz), BooleanClause.Occur.MUST);
-        if (query != null) {
-            booleanQuery.add(query, BooleanClause.Occur.MUST);
-        }
+        addFilters(filters, booleanQuery);
 
         if (logger.isDebugEnabled()) {
             logger.debug("Query getObject(String, Class): {}", booleanQuery.toString());
@@ -531,14 +542,12 @@ public class DefaultIndexer implements Indexer {
     }
 
     @Override
-    public List<Searchable> getObjects(final Query query, final Resource resource) throws IOException {
+    public List<Searchable> getObjects(final List<Filter> filters, final Resource resource) throws IOException {
         List<Searchable> objects = new ArrayList<Searchable>();
 
         BooleanQuery booleanQuery = new BooleanQuery();
         booleanQuery.add(createResourceQuery(resource), BooleanClause.Occur.MUST);
-        if (query != null) {
-            booleanQuery.add(query, BooleanClause.Occur.MUST);
-        }
+        addFilters(filters, booleanQuery);
 
         if (logger.isDebugEnabled()) {
             logger.debug("Query getObject(String, Class): {}", booleanQuery.toString());
@@ -553,15 +562,13 @@ public class DefaultIndexer implements Indexer {
     }
 
     @Override
-    public List<Searchable> getObjects(final Query query, final Resource resource,
+    public List<Searchable> getObjects(final List<Filter> filters, final Resource resource,
                                        final Integer page, final Integer pageSize) throws IOException {
         List<Searchable> objects = new ArrayList<Searchable>();
 
         BooleanQuery booleanQuery = new BooleanQuery();
         booleanQuery.add(createResourceQuery(resource), BooleanClause.Occur.MUST);
-        if (query != null) {
-            booleanQuery.add(query, BooleanClause.Occur.MUST);
-        }
+        addFilters(filters, booleanQuery);
 
         if (logger.isDebugEnabled()) {
             logger.debug("Query getObject(String, Class): {}", booleanQuery.toString());
@@ -576,12 +583,10 @@ public class DefaultIndexer implements Indexer {
     }
 
     @Override
-    public Integer countObjects(final Query query, final Resource resource) throws IOException {
+    public Integer countObjects(final List<Filter> filters, final Resource resource) throws IOException {
         BooleanQuery booleanQuery = new BooleanQuery();
         booleanQuery.add(createResourceQuery(resource), BooleanClause.Occur.MUST);
-        if (query != null) {
-            booleanQuery.add(query, BooleanClause.Occur.MUST);
-        }
+        addFilters(filters, booleanQuery);
 
         if (logger.isDebugEnabled()) {
             logger.debug("Query getObject(String, Class): {}", booleanQuery.toString());

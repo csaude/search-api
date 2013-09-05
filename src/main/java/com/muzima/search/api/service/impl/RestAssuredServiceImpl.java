@@ -28,12 +28,7 @@ import com.muzima.search.api.resource.Resource;
 import com.muzima.search.api.service.RestAssuredService;
 import com.muzima.search.api.util.CollectionUtil;
 import com.muzima.search.api.util.FilenameUtil;
-import com.muzima.search.api.util.StringUtil;
-import org.apache.lucene.index.Term;
 import org.apache.lucene.queryParser.ParseException;
-import org.apache.lucene.search.BooleanClause;
-import org.apache.lucene.search.BooleanQuery;
-import org.apache.lucene.search.TermQuery;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -200,18 +195,18 @@ public class RestAssuredServiceImpl implements RestAssuredService {
      */
     @Override
     public <T> List<T> getObjects(final List<Filter> filters, final Class<T> clazz) throws IOException {
-        return indexer.getObjects(createQuery(filters), clazz);
+        return indexer.getObjects(filters, clazz);
     }
 
     @Override
     public <T> List<T> getObjects(final List<Filter> filters, final Class<T> clazz,
                                   final Integer page, final Integer pageSize) throws IOException {
-        return indexer.getObjects(createQuery(filters), clazz, page, pageSize);
+        return indexer.getObjects(filters, clazz, page, pageSize);
     }
 
     @Override
     public <T> Integer countObjects(final List<Filter> filters, final Class<T> clazz) throws IOException {
-        return indexer.countObjects(createQuery(filters), clazz);
+        return indexer.countObjects(filters, clazz);
     }
 
     /**
@@ -220,34 +215,18 @@ public class RestAssuredServiceImpl implements RestAssuredService {
      */
     @Override
     public List<Searchable> getObjects(final List<Filter> filters, final Resource resource) throws IOException {
-        return indexer.getObjects(createQuery(filters), resource);
+        return indexer.getObjects(filters, resource);
     }
 
     @Override
     public List<Searchable> getObjects(final List<Filter> filters, final Resource resource,
                                        final Integer page, final Integer pageSize) throws IOException {
-        return indexer.getObjects(createQuery(filters), resource, page, pageSize);
+        return indexer.getObjects(filters, resource, page, pageSize);
     }
 
     @Override
     public Integer countObjects(final List<Filter> filters, final Resource resource) throws IOException {
-        return indexer.countObjects(createQuery(filters), resource);
-    }
-
-    /*
-     * Internal method to convert list of filters object into Lucene's BooleanQuery object.
-     */
-    private BooleanQuery createQuery(final List<Filter> filters) {
-        BooleanQuery booleanQuery = null;
-        if (!CollectionUtil.isEmpty(filters)) {
-            booleanQuery = new BooleanQuery();
-            for (Filter filter : filters) {
-                String sanitizedValue = StringUtil.sanitize(filter.getFieldValue());
-                TermQuery termQuery = new TermQuery(new Term(filter.getFieldName(), sanitizedValue));
-                booleanQuery.add(termQuery, BooleanClause.Occur.MUST);
-            }
-        }
-        return booleanQuery;
+        return indexer.countObjects(filters, resource);
     }
 
     /**
