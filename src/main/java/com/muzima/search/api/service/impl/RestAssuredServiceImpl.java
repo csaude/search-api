@@ -69,6 +69,7 @@ public class RestAssuredServiceImpl implements RestAssuredService {
 
     /**
      * {@inheritDoc}
+     *
      * @see RestAssuredService#loadObjects(java.util.Map, com.muzima.search.api.resource.Resource)
      */
     @Override
@@ -136,6 +137,7 @@ public class RestAssuredServiceImpl implements RestAssuredService {
 
     /**
      * {@inheritDoc}
+     *
      * @see RestAssuredService#loadObjects(String, com.muzima.search.api.resource.Resource, java.io.File)
      */
     @Override
@@ -163,6 +165,7 @@ public class RestAssuredServiceImpl implements RestAssuredService {
 
     /**
      * {@inheritDoc}
+     *
      * @see RestAssuredService#getObject(String, Class)
      */
     @Override
@@ -177,6 +180,7 @@ public class RestAssuredServiceImpl implements RestAssuredService {
 
     /**
      * {@inheritDoc}
+     *
      * @see RestAssuredService#getObject(String, com.muzima.search.api.resource.Resource)
      */
     @Override
@@ -191,6 +195,7 @@ public class RestAssuredServiceImpl implements RestAssuredService {
 
     /**
      * {@inheritDoc}
+     *
      * @see RestAssuredService#getObjects(java.util.List, Class)
      */
     @Override
@@ -211,6 +216,7 @@ public class RestAssuredServiceImpl implements RestAssuredService {
 
     /**
      * {@inheritDoc}
+     *
      * @see RestAssuredService#getObjects(java.util.List, com.muzima.search.api.resource.Resource)
      */
     @Override
@@ -231,6 +237,7 @@ public class RestAssuredServiceImpl implements RestAssuredService {
 
     /**
      * {@inheritDoc}
+     *
      * @see RestAssuredService#getObjects(String, Class)
      */
     @Override
@@ -246,6 +253,7 @@ public class RestAssuredServiceImpl implements RestAssuredService {
 
     /**
      * {@inheritDoc}
+     *
      * @see RestAssuredService#getObjects(String, com.muzima.search.api.resource.Resource)
      */
     @Override
@@ -262,6 +270,7 @@ public class RestAssuredServiceImpl implements RestAssuredService {
 
     /**
      * {@inheritDoc}
+     *
      * @see RestAssuredService#deleteObjects(java.util.List, com.muzima.search.api.resource.Resource)
      */
     @Override
@@ -271,6 +280,7 @@ public class RestAssuredServiceImpl implements RestAssuredService {
 
     /**
      * {@inheritDoc}
+     *
      * @see RestAssuredService#createObjects(java.util.List, com.muzima.search.api.resource.Resource)
      */
     @Override
@@ -280,6 +290,7 @@ public class RestAssuredServiceImpl implements RestAssuredService {
 
     /**
      * {@inheritDoc}
+     *
      * @see RestAssuredService#updateObjects(java.util.List, com.muzima.search.api.resource.Resource)
      */
     @Override

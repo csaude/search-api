@@ -67,10 +67,10 @@ public class DirectoryProvider implements SearchProvider<Directory> {
     public Directory get() throws IOException {
         Directory directory = FSDirectory.open(new File(this.directory));
 
-        if(usingEncryption) {
+        if (usingEncryption) {
             byte[] salt = new byte[16];
 
-            if (logger.isDebugEnabled()){
+            if (logger.isDebugEnabled()) {
                 logger.debug("Using password with inject - {}", password);
                 logger.debug("Using encryption with inject - {}", encryption);
             }
@@ -83,11 +83,11 @@ public class DirectoryProvider implements SearchProvider<Directory> {
             }
             DataDecryptor dec = new DataDecryptor(password, salt, false);
 
-            if(usingCompression) {
+            if (usingCompression) {
                 StorePipeTransformer st = new StorePipeTransformer(new DeflateDataTransformer(Deflater.BEST_COMPRESSION, 1), enc);
                 ReadPipeTransformer rt = new ReadPipeTransformer(dec, new InflateDataTransformer());
 
-                if(logger.isDebugEnabled()) {
+                if (logger.isDebugEnabled()) {
                     logger.debug("Using encryption and compression!");
                 }
 
@@ -96,15 +96,14 @@ public class DirectoryProvider implements SearchProvider<Directory> {
             }
 
             // encrypted but not compressed
-            if(logger.isDebugEnabled()) {
+            if (logger.isDebugEnabled()) {
                 logger.debug("Using encryption!");
             }
             return new TransformedDirectory(directory, enc, dec);
-        }
-        else {
-            if(usingCompression) {
+        } else {
+            if (usingCompression) {
                 // not encrypted but compressed
-                if(logger.isDebugEnabled()) {
+                if (logger.isDebugEnabled()) {
                     logger.debug("Using compression!");
                 }
                 return new CompressedIndexDirectory(directory);
@@ -112,7 +111,7 @@ public class DirectoryProvider implements SearchProvider<Directory> {
         }
 
         // not encrypted not compressed
-        if(logger.isDebugEnabled()) {
+        if (logger.isDebugEnabled()) {
             logger.debug("Using standard directory!");
         }
         return directory;

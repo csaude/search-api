@@ -183,7 +183,7 @@ public class RestAssuredServiceTest {
             resourceParams.put("q", "Tho");
             List<Searchable> searchables = service.loadObjects(resourceParams, resource);
             for (Searchable searchable : searchables) {
-                logger.info("Patient uuid: {}", ((Patient)searchable).getUuid());
+                logger.info("Patient uuid: {}", ((Patient) searchable).getUuid());
             }
         } catch (IOException e) {
             logger.error("Exception thrown while trying to connect to server through proxy!", e);

@@ -70,7 +70,7 @@ public class DigestUtil {
         return new String(hex, "ASCII");
     }
 
-    public static String getSHA1Checksum(final String data)  throws IOException {
+    public static String getSHA1Checksum(final String data) throws IOException {
         InputStream inputStream = new ByteArrayInputStream(data.getBytes());
         return getHexString(createChecksum(inputStream));
     }

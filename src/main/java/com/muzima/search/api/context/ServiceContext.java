@@ -52,13 +52,13 @@ public final class ServiceContext {
 
     /**
      * Register a new resource object.
-     *
+     * <p/>
      * When registering resources which will be created from file in the filesystem or the project, make sure that the
      * classes inside the resources (searchable object, algorithm or resolver) doesn't require injection from Guice.
      * When any of the class inside the resource object will require injection, the client / user of the search-api
      * must define their own way to create the resource object using Guice's injector and then use
      * <code>registerResource(String, Resource)</code> to register the resource.
-     *
+     * <p/>
      * Both <code>registerResources(File)</code> or <code>registerResource(InputStream)</code> are using standard Java
      * class loading and class instantiation mechanism to create the classes required by the resource object.
      *
@@ -78,13 +78,13 @@ public final class ServiceContext {
 
     /**
      * Read the input file and then convert each file into resource object and register them.
-     *
+     * <p/>
      * When registering resources which will be created from file in the filesystem or the project, make sure that the
      * classes inside the resources (searchable object, algorithm or resolver) doesn't require injection from Guice.
      * When any of the class inside the resource object will require injection, the client / user of the search-api
      * must define their own way to create the resource object using Guice's injector and then use
      * <code>registerResource(String, Resource)</code> to register the resource.
-     *
+     * <p/>
      * Both <code>registerResources(File)</code> or <code>registerResource(InputStream)</code> are using standard Java
      * class loading and class instantiation mechanism to create the classes required by the resource object.
      *
@@ -109,13 +109,13 @@ public final class ServiceContext {
 
     /**
      * Read the input stream and then convert it into resource object and register them.
-     *
+     * <p/>
      * When registering resources which will be created from file in the filesystem or the project, make sure that the
      * classes inside the resources (searchable object, algorithm or resolver) doesn't require injection from Guice.
      * When any of the class inside the resource object will require injection, the client / user of the search-api
      * must define their own way to create the resource object using Guice's injector and then use
      * <code>registerResource(String, Resource)</code> to register the resource.
-     *
+     * <p/>
      * Both <code>registerResources(File)</code> or <code>registerResource(InputStream)</code> are using standard Java
      * class loading and class instantiation mechanism to create the classes required by the resource object.
      *

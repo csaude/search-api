@@ -19,11 +19,7 @@ package com.muzima.search.api.module;
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.net.Proxy;
 
 public class JUnitModule extends AbstractModule {
 

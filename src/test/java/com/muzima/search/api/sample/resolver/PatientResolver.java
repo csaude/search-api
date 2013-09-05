@@ -28,7 +28,6 @@ public class PatientResolver extends AbstractResolver {
     /**
      * Return the full REST resource based on the search string passed to the method.
      *
-     *
      * @param resourceParams the search string
      * @return full URI to the REST resource
      */

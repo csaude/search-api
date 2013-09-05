@@ -2,7 +2,6 @@ package com.muzima.search.api.module;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
-import com.muzima.search.api.internal.http.CustomKeyStore;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
