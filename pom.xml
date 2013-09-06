@@ -71,14 +71,9 @@
     </dependencies>
     <repositories>
         <repository>
-            <id>local-project-libraries</id>
-            <name>Local project libraries</name>
-            <url>file://${project.basedir}/dependencies</url>
-        </repository>
-        <repository>
             <id>local-project-libraries-github</id>
             <name>Local project libraries</name>
-            <url>https://raw.github.com/muzima/search-api/master/dependencies</url>
+            <url>https://raw.github.com/muzima/muzima-maven/master/releases</url>
         </repository>
     </repositories>
     <build>
