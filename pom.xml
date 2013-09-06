@@ -6,7 +6,7 @@
 
     <groupId>com.muzima</groupId>
     <artifactId>search-api</artifactId>
-    <version>1.0</version>
+    <version>1.0-SNAPSHOT</version>
 
     <dependencies>
         <dependency>
@@ -69,7 +69,18 @@
             <version>0.9.2.2</version>
         </dependency>
     </dependencies>
-
+    <repositories>
+        <repository>
+            <id>local-project-libraries</id>
+            <name>Local project libraries</name>
+            <url>file://${project.basedir}/dependencies</url>
+        </repository>
+        <repository>
+            <id>local-project-libraries-github</id>
+            <name>Local project libraries</name>
+            <url>https://raw.github.com/muzima/search-api/master/dependencies</url>
+        </repository>
+    </repositories>
     <build>
         <pluginManagement>
             <plugins>
