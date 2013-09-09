@@ -31,7 +31,7 @@ import java.net.PasswordAuthentication;
 
 public abstract class AbstractResolver implements Resolver {
 
-    protected final String WEB_SERVER = "http://140.182.15.70:8081/";
+    protected final String WEB_SERVER = "http://localhost:8081/";
 
     protected final String WEB_CONTEXT = "openmrs-standalone/";
 

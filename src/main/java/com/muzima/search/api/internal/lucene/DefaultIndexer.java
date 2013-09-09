@@ -154,7 +154,7 @@ public class DefaultIndexer implements Indexer {
      * @param fields the searchable fields definition
      * @return query string which could be either a unique or full searchable field based query.
      */
-    private Query createObjectQuery(final Object object, final List<SearchableField> fields) {
+    private BooleanQuery createObjectQuery(final Object object, final List<SearchableField> fields) {
         boolean uniqueExists = false;
         BooleanQuery fullBooleanQuery = new BooleanQuery();
         BooleanQuery uniqueBooleanQuery = new BooleanQuery();
@@ -316,22 +316,21 @@ public class DefaultIndexer implements Indexer {
      */
     private void deleteObject(final Object jsonObject, final Resource resource, final IndexWriter indexWriter)
             throws IOException {
-        BooleanQuery booleanQuery = new BooleanQuery();
-        booleanQuery.add(createResourceQuery(resource), BooleanClause.Occur.MUST);
-        booleanQuery.add(createObjectQuery(jsonObject, resource.getSearchableFields()), BooleanClause.Occur.MUST);
+        BooleanQuery query = createObjectQuery(jsonObject, resource.getSearchableFields());
+        query.add(createResourceQuery(resource), BooleanClause.Occur.MUST);
 
         if (logger.isDebugEnabled()) {
-            logger.debug("Query deleteObject(): {}", booleanQuery.toString());
+            logger.debug("Query deleteObject(): {}", query.toString());
         }
 
-        List<Document> documents = findDocuments(booleanQuery);
+        IndexSearcher searcher = createIndexSearcher();
+        TopDocs docs = searcher.search(query, DEFAULT_MAX_DOCUMENTS);
         // only delete object if we can uniquely identify the object
-        //TODO comment out by Akani&Ruimin. There is a defect reported here: https://github.com/muzima/documentation/issues/132
-//        if (documents.size() == 1) {
-        indexWriter.deleteDocuments(booleanQuery);
-//        } else if (documents.size() > 1) {
-//            throw new IOException("Unable to uniquely identify an object using the json object in the repository.");
-//        }
+        if (docs.totalHits == 1) {
+            indexWriter.deleteDocuments(query);
+        } else if (docs.totalHits > 1) {
+            throw new IOException("Unable to uniquely identify an object using the json object in the repository.");
+        }
     }
 
     /**
@@ -710,11 +709,17 @@ public class DefaultIndexer implements Indexer {
 
     @Override
     public void createObjects(final List<Searchable> objects, final Resource resource) throws IOException {
+        IndexSearcher searcher = createIndexSearcher();
         IndexWriter writer = createIndexWriter();
         for (Searchable object : objects) {
             String jsonString = resource.serialize(object);
             Object jsonObject = JsonPath.read(jsonString, "$");
-            writeObject(jsonObject, resource, writer);
+            BooleanQuery query = createObjectQuery(jsonObject, resource.getSearchableFields());
+            query.add(createResourceQuery(resource), BooleanClause.Occur.MUST);
+            TopDocs docs = searcher.search(query, DEFAULT_MAX_DOCUMENTS);
+            if (docs.totalHits == 0) {
+                writeObject(jsonObject, resource, writer);
+            }
         }
         commit(writer);
     }
