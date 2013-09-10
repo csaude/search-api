@@ -141,7 +141,7 @@ public class DefaultIndexer implements Indexer {
      * @return the valid lucene query for single term.
      */
     private TermQuery createQuery(final String field, final String value) {
-        return new TermQuery(new Term(field, StringUtil.sanitize(StringUtil.lowerCase(value))));
+        return new TermQuery(new Term(field, StringUtil.lowerCase(value)));
     }
 
     /**
@@ -288,14 +288,24 @@ public class DefaultIndexer implements Indexer {
          */
         for (SearchableField searchableField : resource.getSearchableFields()) {
             Object valueObject = JsonPath.read(jsonObject, searchableField.getExpression());
-            String value = StringUtil.EMPTY;
-            if (valueObject != null) {
-                value = StringUtil.sanitize(StringUtil.lowerCase(valueObject.toString()));
+            if (valueObject instanceof JSONArray) {
+                JSONArray jsonArray = (JSONArray) valueObject;
+                for (Object arrayElement : jsonArray) {
+                    String value = StringUtil.lowerCase(String.valueOf(arrayElement));
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Adding field name '{}' from path '{}' with value: {}",
+                                searchableField.getName(), searchableField.getExpression(), value);
+                    }
+                    document.add(new Field(searchableField.getName(), value, Field.Store.NO, Field.Index.NOT_ANALYZED));
+                }
+            } else {
+                String value = StringUtil.lowerCase(String.valueOf(valueObject));
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Adding field name '{}' from path '{}' with value: {}",
+                            searchableField.getName(), searchableField.getExpression(), value);
+                }
+                document.add(new Field(searchableField.getName(), value, Field.Store.NO, Field.Index.NOT_ANALYZED));
             }
-            if (logger.isDebugEnabled()) {
-                logger.debug("Adding field: {} with value: {}", searchableField.getExpression(), value);
-            }
-            document.add(new Field(searchableField.getName(), value, Field.Store.NO, Field.Index.NOT_ANALYZED));
         }
 
         if (logger.isDebugEnabled()) {
@@ -467,13 +477,13 @@ public class DefaultIndexer implements Indexer {
 
     private void addFilters(final List<Filter> filters, final BooleanQuery booleanQuery) {
         for (Filter filter : filters) {
-            String sanitizedValue = StringUtil.sanitize(StringUtil.lowerCase(filter.getFieldValue()));
-            if (!StringUtil.isEmpty(sanitizedValue)) {
-                if (sanitizedValue.contains("*") || sanitizedValue.contains("?")) {
-                    WildcardQuery wildcardQuery = new WildcardQuery(new Term(filter.getFieldName(), sanitizedValue));
+            String lowerCaseValue = StringUtil.lowerCase(filter.getFieldValue());
+            if (!StringUtil.isEmpty(lowerCaseValue)) {
+                if (lowerCaseValue.contains("*") || lowerCaseValue.contains("?")) {
+                    WildcardQuery wildcardQuery = new WildcardQuery(new Term(filter.getFieldName(), lowerCaseValue));
                     booleanQuery.add(wildcardQuery, BooleanClause.Occur.MUST);
                 } else {
-                    TermQuery termQuery = new TermQuery(new Term(filter.getFieldName(), sanitizedValue));
+                    TermQuery termQuery = new TermQuery(new Term(filter.getFieldName(), lowerCaseValue));
                     booleanQuery.add(termQuery, BooleanClause.Occur.MUST);
                 }
             }

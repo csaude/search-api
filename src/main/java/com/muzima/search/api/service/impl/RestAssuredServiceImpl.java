@@ -28,6 +28,7 @@ import com.muzima.search.api.resource.Resource;
 import com.muzima.search.api.service.RestAssuredService;
 import com.muzima.search.api.util.CollectionUtil;
 import com.muzima.search.api.util.FilenameUtil;
+import com.muzima.search.api.util.StringUtil;
 import org.apache.lucene.queryParser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,16 +94,18 @@ public class RestAssuredServiceImpl implements RestAssuredService {
         String resourcePayload = readResource(resourcePath, resource);
         List<Object> pagingInfo = Collections.emptyList();
         do {
-            StringReader stringReader = new StringReader(resourcePayload);
-            searchableList.addAll(indexer.loadObjects(resource, stringReader));
-            try {
-                pagingInfo = JsonPath.read(resourcePayload, "$['links'][?(@.rel == 'next')]");
-                if (!CollectionUtil.isEmpty(pagingInfo)) {
-                    String nextPath = JsonPath.read(pagingInfo.get(0), "$['uri']");
-                    resourcePayload = readResource(nextPath, resource);
+            if (!StringUtil.isEmpty(resourcePayload)) {
+                StringReader stringReader = new StringReader(resourcePayload);
+                searchableList.addAll(indexer.loadObjects(resource, stringReader));
+                try {
+                    pagingInfo = JsonPath.read(resourcePayload, "$['links'][?(@.rel == 'next')]");
+                    if (!CollectionUtil.isEmpty(pagingInfo)) {
+                        String nextPath = JsonPath.read(pagingInfo.get(0), "$['uri']");
+                        resourcePayload = readResource(nextPath, resource);
+                    }
+                } catch (InvalidPathException e) {
+                    logger.error("REST resource doesn't contains paging information. Exiting!");
                 }
-            } catch (InvalidPathException e) {
-                logger.error("REST resource doesn't contains paging information. Exiting!");
             }
         } while (!CollectionUtil.isEmpty(pagingInfo));
         return searchableList;
@@ -121,17 +124,18 @@ public class RestAssuredServiceImpl implements RestAssuredService {
         connection.setConnectTimeout(timeout);
         Resolver resolver = resource.getResolver();
         connection = resolver.authenticate(connection);
-
-        BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-
-        String inputLine;
         // we need to cache the input stream and then follow the next link.
         StringBuilder builder = new StringBuilder();
-        while ((inputLine = reader.readLine()) != null) {
-            builder.append(inputLine);
+        if (connection.getResponseCode() == HttpURLConnection.HTTP_OK
+                || connection.getResponseCode() == HttpURLConnection.HTTP_CREATED) {
+            BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(connection.getInputStream()));
+            String inputLine;
+            while ((inputLine = reader.readLine()) != null) {
+                builder.append(inputLine);
+            }
+            reader.close();
         }
-        reader.close();
-
         return builder.toString();
     }
 
