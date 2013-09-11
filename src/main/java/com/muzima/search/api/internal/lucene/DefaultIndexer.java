@@ -87,6 +87,7 @@ public class DefaultIndexer implements Indexer {
                              final Version version, final Analyzer analyzer) {
         this.defaultField = defaultField;
         this.parser = new QueryParser(version, defaultField, analyzer);
+        this.parser.setAllowLeadingWildcard(true);
     }
 
     /**
