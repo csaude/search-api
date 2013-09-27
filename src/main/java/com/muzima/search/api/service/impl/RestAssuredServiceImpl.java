@@ -104,7 +104,7 @@ public class RestAssuredServiceImpl implements RestAssuredService {
                         resourcePayload = readResource(nextPath, resource);
                     }
                 } catch (InvalidPathException e) {
-                    logger.error("REST resource doesn't contains paging information. Exiting!");
+                    logger.info("REST resource doesn't contains paging information. Exiting!");
                 }
             }
         } while (!CollectionUtil.isEmpty(pagingInfo));
