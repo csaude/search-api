@@ -337,11 +337,11 @@ public class DefaultIndexer implements Indexer {
         IndexSearcher searcher = createIndexSearcher();
         TopDocs docs = searcher.search(query, DEFAULT_MAX_DOCUMENTS);
         // only delete object if we can uniquely identify the object
-        if (docs.totalHits == 1) {
+//        if (docs.totalHits == 1) {
             indexWriter.deleteDocuments(query);
-        } else if (docs.totalHits > 1) {
-            throw new IOException("Unable to uniquely identify an object using the json object in the repository.");
-        }
+//        } else if (docs.totalHits > 1) {
+//            throw new IOException("Unable to uniquely identify an object using the json object in the repository.");
+//        }
     }
 
     /**
