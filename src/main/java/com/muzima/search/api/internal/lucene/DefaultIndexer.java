@@ -122,10 +122,11 @@ public class DefaultIndexer implements Indexer {
         return indexSearcher;
     }
 
-    private void commit(final IndexWriter writer) throws IOException {
+    private void commit(final IndexWriter writer, final IndexSearcher searcher) throws IOException {
         if (writer != null) {
             writer.commit();
             writer.close();
+            searcher.close();
         }
         indexSearcher = null;
     }
@@ -709,13 +710,14 @@ public class DefaultIndexer implements Indexer {
 
     @Override
     public void deleteObjects(final List<Searchable> objects, final Resource resource) throws IOException {
+        IndexSearcher searcher = createIndexSearcher();
         IndexWriter writer = createIndexWriter();
         for (Searchable object : objects) {
             String jsonString = resource.serialize(object);
             Object jsonObject = JsonPath.read(jsonString, "$");
             deleteObject(jsonObject, resource, writer);
         }
-        commit(writer);
+        commit(writer, searcher);
     }
 
     @Override
@@ -732,17 +734,18 @@ public class DefaultIndexer implements Indexer {
                 writeObject(jsonObject, resource, writer);
             }
         }
-        commit(writer);
+        commit(writer, searcher);
     }
 
     @Override
     public void updateObjects(final List<Searchable> objects, final Resource resource) throws IOException {
+        IndexSearcher searcher = createIndexSearcher();
         IndexWriter writer = createIndexWriter();
         for (Searchable object : objects) {
             String jsonString = resource.serialize(object);
             Object jsonObject = JsonPath.read(jsonString, "$");
             updateObject(jsonObject, resource, writer);
         }
-        commit(writer);
+        commit(writer, searcher);
     }
 }
