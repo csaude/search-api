@@ -122,13 +122,16 @@ public class DefaultIndexer implements Indexer {
         return indexSearcher;
     }
 
-    private void commit(final IndexWriter writer, final IndexSearcher searcher) throws IOException {
+    private void commit(final IndexWriter writer) throws IOException {
         if (writer != null) {
             writer.commit();
             writer.close();
-            searcher.close();
         }
-        indexSearcher = null;
+
+        if (indexSearcher != null) {
+            indexSearcher.close();
+            indexSearcher = null;
+        }
     }
 
     /*
@@ -717,7 +720,7 @@ public class DefaultIndexer implements Indexer {
             Object jsonObject = JsonPath.read(jsonString, "$");
             deleteObject(jsonObject, resource, writer);
         }
-        commit(writer, searcher);
+        commit(writer);
     }
 
     @Override
@@ -734,7 +737,7 @@ public class DefaultIndexer implements Indexer {
                 writeObject(jsonObject, resource, writer);
             }
         }
-        commit(writer, searcher);
+        commit(writer);
     }
 
     @Override
@@ -746,6 +749,6 @@ public class DefaultIndexer implements Indexer {
             Object jsonObject = JsonPath.read(jsonString, "$");
             updateObject(jsonObject, resource, writer);
         }
-        commit(writer, searcher);
+        commit(writer);
     }
 }
