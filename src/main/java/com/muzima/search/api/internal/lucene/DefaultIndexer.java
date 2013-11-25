@@ -33,6 +33,7 @@ import net.minidev.json.JSONObject;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.queryParser.ParseException;
@@ -129,6 +130,10 @@ public class DefaultIndexer implements Indexer {
         }
 
         if (indexSearcher != null) {
+            IndexReader reader = indexSearcher.getIndexReader();
+            if (reader != null) {
+                reader.close();
+            }
             indexSearcher.close();
             indexSearcher = null;
         }
@@ -712,8 +717,7 @@ public class DefaultIndexer implements Indexer {
     }
 
     @Override
-    public void deleteObjects(final List<Searchable> objects, final Resource resource) throws IOException {
-        IndexSearcher searcher = createIndexSearcher();
+    public synchronized void deleteObjects(final List<Searchable> objects, final Resource resource) throws IOException {
         IndexWriter writer = createIndexWriter();
         for (Searchable object : objects) {
             String jsonString = resource.serialize(object);
@@ -724,7 +728,7 @@ public class DefaultIndexer implements Indexer {
     }
 
     @Override
-    public void createObjects(final List<Searchable> objects, final Resource resource) throws IOException {
+    public synchronized void createObjects(final List<Searchable> objects, final Resource resource) throws IOException {
         IndexSearcher searcher = createIndexSearcher();
         IndexWriter writer = createIndexWriter();
         for (Searchable object : objects) {
@@ -741,8 +745,7 @@ public class DefaultIndexer implements Indexer {
     }
 
     @Override
-    public void updateObjects(final List<Searchable> objects, final Resource resource) throws IOException {
-        IndexSearcher searcher = createIndexSearcher();
+    public synchronized void updateObjects(final List<Searchable> objects, final Resource resource) throws IOException {
         IndexWriter writer = createIndexWriter();
         for (Searchable object : objects) {
             String jsonString = resource.serialize(object);
