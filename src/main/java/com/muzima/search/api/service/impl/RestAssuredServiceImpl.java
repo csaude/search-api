@@ -46,6 +46,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.GZIPInputStream;
 
 public class RestAssuredServiceImpl implements RestAssuredService {
 
@@ -120,6 +121,7 @@ public class RestAssuredServiceImpl implements RestAssuredService {
         if (proxy != null) {
             connection = (HttpURLConnection) url.openConnection(proxy);
         }
+        connection.setRequestProperty("Accept-Encoding", "gzip");
         connection.setRequestMethod(GET);
         connection.setConnectTimeout(timeout);
         Resolver resolver = resource.getResolver();
@@ -128,8 +130,13 @@ public class RestAssuredServiceImpl implements RestAssuredService {
         StringBuilder builder = new StringBuilder();
         if (connection.getResponseCode() == HttpURLConnection.HTTP_OK
                 || connection.getResponseCode() == HttpURLConnection.HTTP_CREATED) {
-            BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(connection.getInputStream()));
+            BufferedReader reader;
+            if (connection.getHeaderField("Content-Encoding") != null
+                    && connection.getHeaderField("Content-Encoding").equals("gzip")) {
+                reader = new BufferedReader(new InputStreamReader(new GZIPInputStream(connection.getInputStream())));
+            } else {
+                reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+            }
             String inputLine;
             while ((inputLine = reader.readLine()) != null) {
                 builder.append(inputLine);
