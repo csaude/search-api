@@ -32,8 +32,10 @@ public class ISO8601Util {
      * Transform Calendar to ISO 8601 string.
      */
     public static String fromCalendar(final Calendar calendar) {
+        SimpleDateFormat dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ");
+        dateFormatter.setTimeZone(calendar.getTimeZone());
         Date date = calendar.getTime();
-        String formatted = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSZ").format(date);
+        String formatted = dateFormatter.format(date);
         return formatted.substring(0, 22) + ":" + formatted.substring(22);
     }
 
