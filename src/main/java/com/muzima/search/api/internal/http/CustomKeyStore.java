@@ -7,9 +7,15 @@ import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManagerFactory;
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
+import java.io.InputStream;
 import java.security.KeyStore;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
 
 /**
  * Implementation of class which can be used for connect to server with self signed SSL certificate.
@@ -39,23 +45,53 @@ public class CustomKeyStore {
     @Named("key.store.path")
     private String path;
 
+    @Inject(optional = true)
+    @Named("key.store.credential")
+    private String credential;
+
     protected CustomKeyStore() {
     }
 
     public SSLContext createContext() {
+
         SSLContext context = null;
         try {
-            // Create a KeyStore containing our trusted CAs
+//            if (credential != null) {
+//                BufferedReader bufferedReader = new BufferedReader(new FileReader(credential));
+//                String credentials = bufferedReader.readLine();
+//                bufferedReader.close();
+//
+//                password = credentials.substring(credentials.indexOf(":") + 1);
+//                keyStoreType = credentials.substring(0, credentials.indexOf(":"));
+//            }
+
+            CertificateFactory certificateFactory = CertificateFactory.getInstance("X.509");
+            InputStream inputStream = new BufferedInputStream(new FileInputStream(new File(path)));
+            Certificate certificate = certificateFactory.generateCertificate(inputStream);
+
+            String keyStoreType = KeyStore.getDefaultType();
             KeyStore keyStore = KeyStore.getInstance(keyStoreType);
-            FileInputStream inputStream = new FileInputStream(new File(path));
-            keyStore.load(inputStream, password.toCharArray());
-            // Create a TrustManager that trusts the CAs in our KeyStore
+            keyStore.load(null, null);
+            keyStore.setCertificateEntry("CA", certificate);
+
             String tmfAlgorithm = TrustManagerFactory.getDefaultAlgorithm();
             TrustManagerFactory tmf = TrustManagerFactory.getInstance(tmfAlgorithm);
             tmf.init(keyStore);
-            // Create an SSLContext that uses our TrustManager
-            context = SSLContext.getInstance(SSL_CONTEXT_TLS);
+
+            context = SSLContext.getInstance("TLS");
             context.init(null, tmf.getTrustManagers(), null);
+//
+//
+//            // Create a KeyStore containing our trusted CAs
+//            KeyStore keyStore = KeyStore.getInstance(keyStoreType);
+//            keyStore.load(inputStream, password.toCharArray());
+//            // Create a TrustManager that trusts the CAs in our KeyStore
+//            String tmfAlgorithm = TrustManagerFactory.getDefaultAlgorithm();
+//            TrustManagerFactory tmf = TrustManagerFactory.getInstance(tmfAlgorithm);
+//            tmf.init(keyStore);
+//            // Create an SSLContext that uses our TrustManager
+//            context = SSLContext.getInstance(SSL_CONTEXT_TLS);
+//            context.init(null, tmf.getTrustManagers(), null);
         } catch (Exception e) {
             logger.error("Unable generate ssl context object.", e);
         }
