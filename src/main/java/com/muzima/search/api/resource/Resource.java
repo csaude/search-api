@@ -1,17 +1,9 @@
-/**
- * Copyright 2012 Muzima Team
+/*
+ * Copyright (c) 2014. The Trustees of Indiana University.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * This version of the code is licensed under the MPL 2.0 Open Source license with additional
+ * healthcare disclaimer. If the user is an entity intending to commercialize any application
+ * that uses this code in a for-profit venture, please contact the copyright holder.
  */
 
 package com.muzima.search.api.resource;
@@ -25,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Interface for to represent a single resource object for the REST Assured service. This interface describe how a
+ * Interface to represent a single resource object for the REST Assured service. This interface describe how a
  * a REST resource will be converted into lucene index and how to convert the representation into a concrete object.
  * <p/>
  * It is strongly advised for the user of the API to extends the <code>ObjectResource</code> instead of directly
