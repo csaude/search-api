@@ -11,7 +11,7 @@ package com.muzima.search.api.internal.provider;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import org.apache.lucene.store.Directory;
-import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.store.SimpleFSDirectory;
 import org.apache.lucene.store.transform.CompressedIndexDirectory;
 import org.apache.lucene.store.transform.TransformedDirectory;
 import org.apache.lucene.store.transform.algorithm.ReadPipeTransformer;
@@ -28,7 +28,7 @@ import java.io.IOException;
 import java.security.GeneralSecurityException;
 import java.util.zip.Deflater;
 
-public class DirectoryProvider implements SearchProvider<Directory> {
+public class    DirectoryProvider implements SearchProvider<Directory> {
 
     private final String directory;
     private final Logger logger = LoggerFactory.getLogger(DirectoryProvider.class.getSimpleName());
@@ -57,7 +57,14 @@ public class DirectoryProvider implements SearchProvider<Directory> {
 
     @Override
     public Directory get() throws IOException {
-        Directory directory = FSDirectory.open(new File(this.directory));
+        // Apparently FSDirectory.open(File) will try to find the best implementation for the platform. In Android case,
+        // this method will use the NIOFSDirectory implementation. Now this implementation have some issues with Future
+        // object. So, if the implementation is planning to use a lot of Future object (similar to Async task), then we
+        // should use the SimpleFSDirectory implementation.
+        // See the following for reference:
+        // * https://lucene.apache.org/core/3_6_1/api/all/org/apache/lucene/store/FSDirectory.html
+        // * http://lucene.472066.n3.nabble.com/ClosedChannelException-from-IndexWriter-getReader-td706613.html
+        Directory directory = new SimpleFSDirectory(new File(this.directory));
 
         if (usingEncryption) {
             byte[] salt = new byte[16];
