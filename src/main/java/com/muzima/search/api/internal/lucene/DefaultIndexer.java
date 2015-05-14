@@ -119,15 +119,12 @@ public class DefaultIndexer implements Indexer {
         if (writer != null) {
             writer.commit();
             writer.close();
-        }
 
-        if (indexSearcher != null) {
             IndexReader reader = indexSearcher.getIndexReader();
-            if (reader != null) {
-                reader.close();
+            IndexReader openedReader = IndexReader.openIfChanged(reader);
+            if (openedReader != null && reader != openedReader) {
+              indexSearcher = new IndexSearcher(openedReader);
             }
-            indexSearcher.close();
-            indexSearcher = null;
         }
     }
 
