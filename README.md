@@ -18,6 +18,14 @@ Requirements:
 - Domain object representation of the REST resource.
 - Configuration document to tie all the above together.
 
+To include in your code, add maven dependency as follows, replacing {version} with your preferred version:
+
+    <dependency>
+        <groupId>com.muzima</groupId>
+        <artifactId>search-api</artifactId>
+        <version>{version}</version>
+    </dependency>
+
 Check the sample in the code to see how to do this. Happy coding!
 
 **Muzima Team**
