@@ -138,6 +138,7 @@
                     <noJekyll>true</noJekyll>
                     <outputDirectory>${project.build.directory}/mvn-repo</outputDirectory>
                     <branch>refs/heads/search-api</branch>
+                    <merge>true</merge>
                     <includes>
                         <include>**/*</include>
                     </includes>
