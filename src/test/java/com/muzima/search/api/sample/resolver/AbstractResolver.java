@@ -65,4 +65,9 @@ public abstract class AbstractResolver implements Resolver {
         }
         return connection;
     }
+
+    @Override
+    public HttpURLConnection setCustomRequestProperties(final HttpURLConnection connection){
+        return connection;
+    }
 }

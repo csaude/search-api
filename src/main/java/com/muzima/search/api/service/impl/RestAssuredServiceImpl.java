@@ -117,7 +117,8 @@ public class RestAssuredServiceImpl implements RestAssuredService {
         connection.setRequestMethod(GET);
         connection.setConnectTimeout(timeout);
         Resolver resolver = resource.getResolver();
-        connection = resolver.authenticate(connection);
+        connection = resolver.setCustomRequestProperties(connection);
+        resolver.authenticate(connection);
         // we need to cache the input stream and then follow the next link.
         StringBuilder builder = new StringBuilder();
         if (connection.getResponseCode() == HttpURLConnection.HTTP_OK
