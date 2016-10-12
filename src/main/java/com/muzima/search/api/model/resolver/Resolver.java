@@ -29,4 +29,12 @@ public interface Resolver {
      * @return the connection with authentication information when applicable.
      */
     HttpURLConnection authenticate(final HttpURLConnection connection) throws IOException;
+
+    /**
+     * Add request properties to the http url connection (if any).
+     *
+     * @param connection the original connection without custom request properties.
+     * @return the connection with custom request properties when applicable.
+     */
+    HttpURLConnection setCustomRequestProperties(final HttpURLConnection connection) throws IOException;
 }
