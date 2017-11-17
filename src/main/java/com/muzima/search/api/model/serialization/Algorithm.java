@@ -21,15 +21,19 @@ public interface Algorithm {
      * Implementation of this method will define how the object will be serialized from the String representation.
      *
      * @param serialized the string representation
+     * @param isFullDeserialization  determines whether to perform full deserialization. If set to false,
+     *                             the implementation of this method can perform deserialization of minimal fields
      * @return the concrete object
      */
-    Searchable deserialize(final String serialized) throws IOException;
+    Searchable deserialize(final String serialized, final boolean isFullDeserialization) throws IOException;
 
     /**
      * Implementation of this method will define how the object will be de-serialized into the String representation.
      *
      * @param object the object
+     * @param isFullSerialization determines whether to perform full serialization. If set to false,
+     *                             the implementation of this method can perform serialization of minimal fields
      * @return the string representation
      */
-    String serialize(final Searchable object) throws IOException;
+    String serialize(final Searchable object, final boolean isFullSerialization) throws IOException;
 }
