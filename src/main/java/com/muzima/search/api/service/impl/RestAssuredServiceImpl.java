@@ -87,7 +87,6 @@ public class RestAssuredServiceImpl implements RestAssuredService {
         String resourcePayload = readResource(resourcePath, resource);
         List<Object> pagingInfo = Collections.emptyList();
         do {
-            System.out.println("muzima downloaded "+resourcePath);
             if (!StringUtil.isEmpty(resourcePayload)) {
                 StringReader stringReader = new StringReader(resourcePayload);
                 searchableList.addAll(indexer.loadObjects(resource, stringReader));
@@ -102,7 +101,6 @@ public class RestAssuredServiceImpl implements RestAssuredService {
                 }
             }
         } while (!CollectionUtil.isEmpty(pagingInfo));
-        System.out.println("muzima processed "+resourcePath);
         return searchableList;
     }
 
@@ -110,7 +108,6 @@ public class RestAssuredServiceImpl implements RestAssuredService {
      * Internal implementation of reading a REST resource and convert them into String object.
      */
     private String readResource(final String resourcePath, final Resource resource) throws IOException {
-        System.out.println("muzima downloading "+resourcePath);
         URL url = new URL(resourcePath);
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         if (proxy != null) {
