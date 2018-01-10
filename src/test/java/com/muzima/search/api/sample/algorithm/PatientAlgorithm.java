@@ -25,7 +25,7 @@ public class PatientAlgorithm implements Algorithm {
      * @return the concrete patient object
      */
     @Override
-    public Searchable deserialize(final String serialized) throws IOException {
+    public Searchable deserialize(final String serialized, final boolean isFullDeserialization) throws IOException {
         Patient patient = new Patient();
 
         // get the full json object representation and then pass this around to the next JsonPath.read()
@@ -60,7 +60,7 @@ public class PatientAlgorithm implements Algorithm {
      * @return the json representation
      */
     @Override
-    public String serialize(final Searchable object) throws IOException {
+    public String serialize(final Searchable object, final boolean isFullSerialization) throws IOException {
         Patient patient = (Patient) object;
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("uuid", patient.getUuid());

@@ -136,6 +136,7 @@ public class RestAssuredServiceImpl implements RestAssuredService {
             }
             reader.close();
         }
+
         return builder.toString();
     }
 

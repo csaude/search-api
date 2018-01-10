@@ -204,7 +204,7 @@ public class ObjectResource implements Resource {
      */
     @Override
     public String serialize(final Searchable object) throws IOException {
-        return getAlgorithm().serialize(object);
+        return getAlgorithm().serialize(object, true);
     }
 
     /**
@@ -216,7 +216,7 @@ public class ObjectResource implements Resource {
      */
     @Override
     public Searchable deserialize(final String string) throws IOException {
-        return getAlgorithm().deserialize(string);
+        return getAlgorithm().deserialize(string, true);
     }
 
     /**
