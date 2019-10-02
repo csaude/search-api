@@ -253,8 +253,12 @@ public class DefaultIndexer implements Indexer {
             TopDocs docs = searcher.search(query, countDocs.totalHits > 0 ? countDocs.totalHits : DEFAULT_MAX_DOCUMENTS);
             ScoreDoc[] hits = docs.scoreDocs;
             for (int i = (pageSize * (page - 1)); i < pageSize * page; i++) {
-                ScoreDoc hit = hits[i];
-                documents.add(searcher.doc(hit.doc));
+                if(i<hits.length) {
+                    ScoreDoc hit = hits[i];
+                    documents.add(searcher.doc(hit.doc));
+                } else {
+                    break;
+                }
             }
         }
         return documents;
