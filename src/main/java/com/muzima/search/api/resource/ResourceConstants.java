@@ -23,4 +23,6 @@ public class ResourceConstants {
     public static final String UNIQUE_FIELD = "$['field.unique']";
 
     public static final String SEARCHABLE_FIELD = "$['field.searchable']";
+
+    public static final String SORT_FIELD = "$['field.sortable']";
 }

@@ -35,6 +35,8 @@ import org.apache.lucene.search.BooleanQuery;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.Sort;
+import org.apache.lucene.search.SortField;
 import org.apache.lucene.search.TermQuery;
 import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.search.WildcardQuery;
@@ -235,6 +237,36 @@ public class DefaultIndexer implements Indexer {
     /**
      * Search the local lucene repository for documents with similar information with information inside the
      * <code>query</code>. Search can return multiple documents with similar information or empty list when no
+     * document have similar information with the <code>query</code>. Returned documents are sorted by parameters defined
+     * in sortFields list.
+     *
+     * @param query the lucene query.
+     * @param sortFields the list of fields to sort results by.
+     * @return objects with similar information with the query.
+     * @throws IOException when the search encounter error.
+     */
+    private List<Document> findDocuments(final Query query, List<SortField> sortFields) throws IOException {
+        List<Document> documents = new ArrayList<Document>();
+        IndexSearcher searcher = createIndexSearcher();
+        // Iterating over all hits:
+        // * http://stackoverflow.com/questions/3300265/lucene-3-iterating-over-all-hits
+        if (searcher != null && sortFields.size() >0) {
+            SortField[] sortFieldsArray = new SortField[sortFields.size()];
+            sortFields.toArray(sortFieldsArray);
+            Sort sort = new Sort(sortFieldsArray);
+            TopDocs countDocs = searcher.search(query, DEFAULT_MAX_DOCUMENTS);
+            TopDocs docs = searcher.search(query, countDocs.totalHits > 0 ? countDocs.totalHits : DEFAULT_MAX_DOCUMENTS, sort);
+            ScoreDoc[] hits = docs.scoreDocs;
+            for (ScoreDoc hit : hits) {
+                documents.add(searcher.doc(hit.doc));
+            }
+        }
+        return documents;
+    }
+
+    /**
+     * Search the local lucene repository for documents with similar information with information inside the
+     * <code>query</code>. Search can return multiple documents with similar information or empty list when no
      * document have similar information with the <code>query</code>.
      *
      * @param query    the lucene query.
@@ -250,7 +282,9 @@ public class DefaultIndexer implements Indexer {
         // * http://stackoverflow.com/questions/3300265/lucene-3-iterating-over-all-hits
         if (searcher != null) {
             TopDocs countDocs = searcher.search(query, DEFAULT_MAX_DOCUMENTS);
+
             TopDocs docs = searcher.search(query, countDocs.totalHits > 0 ? countDocs.totalHits : DEFAULT_MAX_DOCUMENTS);
+
             ScoreDoc[] hits = docs.scoreDocs;
             for (int i = (pageSize * (page - 1)); i < pageSize * page; i++) {
                 if(i<hits.length) {
@@ -264,6 +298,46 @@ public class DefaultIndexer implements Indexer {
         return documents;
     }
 
+    /**
+     * Search the local lucene repository for documents with similar information with information inside the
+     * <code>query</code>. Search can return multiple documents with similar information or empty list when no
+     * document have similar information with the <code>query</code>. Returned documents are sorted by parameters defined
+     *      * in sortFields list.
+     *
+     * @param query    the lucene query.
+     * @param sortFields the list of fields to sort results by.
+     * @param page     the page number.
+     * @param pageSize the size of the page.
+     * @return objects with similar information with the query.
+     * @throws IOException when the search encounter error.
+     */
+    private List<Document> findDocuments(final Query query, List<SortField> sortFields, final Integer page, Integer pageSize) throws IOException {
+        List<Document> documents = new ArrayList<Document>();
+        IndexSearcher searcher = createIndexSearcher();
+        // Iterating over all hits:
+        // * http://stackoverflow.com/questions/3300265/lucene-3-iterating-over-all-hits
+        if (searcher != null) {
+            TopDocs countDocs = searcher.search(query, DEFAULT_MAX_DOCUMENTS);
+
+            if(sortFields.size() > 0) {
+                SortField[] sortFieldsArray = new SortField[sortFields.size()];
+                sortFields.toArray(sortFieldsArray);
+                Sort sort = new Sort(sortFieldsArray);
+                TopDocs docs = searcher.search(query, countDocs.totalHits > 0 ? countDocs.totalHits : DEFAULT_MAX_DOCUMENTS, sort);
+
+                ScoreDoc[] hits = docs.scoreDocs;
+                for (int i = (pageSize * (page - 1)); i < pageSize * page; i++) {
+                    if (i < hits.length) {
+                        ScoreDoc hit = hits[i];
+                        documents.add(searcher.doc(hit.doc));
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
+        return documents;
+    }
     /**
      * Write json representation of a single object as a single document entry inside Lucene index.
      *
@@ -587,6 +661,99 @@ public class DefaultIndexer implements Indexer {
         }
 
         List<Document> documents = findDocuments(booleanQuery, page, pageSize);
+        for (Document document : documents) {
+            String json = document.get(DEFAULT_FIELD_JSON);
+            objects.add(resource.deserialize(json));
+        }
+        return objects;
+    }
+
+    @Override
+    public <T> List<T> getSortedObjects(final List<Filter> filters, final Class<T> clazz,
+                                        final Resource resource) throws IOException {
+        List<T> objects = new ArrayList<T>();
+
+        BooleanQuery booleanQuery = new BooleanQuery();
+        booleanQuery.add(createClassQuery(clazz), BooleanClause.Occur.MUST);
+        addFilters(filters, booleanQuery);
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("Query getObject(String, Class): {}", booleanQuery.toString());
+        }
+
+        List<Document> documents = findDocuments(booleanQuery);
+        for (Document document : documents) {
+            String resourceName = document.get(DEFAULT_FIELD_RESOURCE);
+            String json = document.get(DEFAULT_FIELD_JSON);
+            objects.add(clazz.cast(resource.deserialize(json)));
+        }
+        return objects;
+    }
+
+    @Override
+    public <T> List<T> getSortedObjects(final List<Filter> filters, final Class<T> clazz, final Resource resource,
+                                        final Integer page, final Integer pageSize) throws IOException {
+        List<T> objects = new ArrayList<T>();
+
+        BooleanQuery booleanQuery = new BooleanQuery();
+        booleanQuery.add(createClassQuery(clazz), BooleanClause.Occur.MUST);
+        addFilters(filters, booleanQuery);
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("Query getObject(String, Class): {}", booleanQuery.toString());
+        }
+
+        List<SortField> sortFields = resource.getSortableFields();
+
+        List<Document> documents;
+        if(sortFields.size()>0){
+            documents = findDocuments(booleanQuery,sortFields, page, pageSize);
+        } else {
+            documents = findDocuments(booleanQuery, page, pageSize);
+        }
+        for (Document document : documents) {;
+            String json = document.get(DEFAULT_FIELD_JSON);
+            objects.add(clazz.cast(resource.deserialize(json)));
+        }
+        return objects;
+    }
+
+    @Override
+    public List<Searchable> getSortedObjects(final List<Filter> filters, final Resource resource) throws IOException {
+        List<Searchable> objects = new ArrayList<Searchable>();
+
+        BooleanQuery booleanQuery = new BooleanQuery();
+        booleanQuery.add(createResourceQuery(resource), BooleanClause.Occur.MUST);
+        addFilters(filters, booleanQuery);
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("Query getObject(String, Class): {}", booleanQuery.toString());
+        }
+
+        List<Document> documents = findDocuments(booleanQuery);
+        for (Document document : documents) {
+            String json = document.get(DEFAULT_FIELD_JSON);
+            objects.add(resource.deserialize(json));
+        }
+        return objects;
+    }
+
+    @Override
+    public List<Searchable> getSortedObjects(final List<Filter> filters, final Resource resource,
+                                       final Integer page, final Integer pageSize) throws IOException {
+        List<Searchable> objects = new ArrayList<Searchable>();
+
+        BooleanQuery booleanQuery = new BooleanQuery();
+        booleanQuery.add(createResourceQuery(resource), BooleanClause.Occur.MUST);
+        addFilters(filters, booleanQuery);
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("Query getObject(String, Class): {}", booleanQuery.toString());
+        }
+
+        List<SortField> sortFields = resource.getSortableFields();
+
+        List<Document> documents = findDocuments(booleanQuery, sortFields, page, pageSize);
         for (Document document : documents) {
             String json = document.get(DEFAULT_FIELD_JSON);
             objects.add(resource.deserialize(json));

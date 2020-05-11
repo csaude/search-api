@@ -11,6 +11,7 @@ package com.muzima.search.api.resource;
 import com.muzima.search.api.model.object.Searchable;
 import com.muzima.search.api.model.resolver.Resolver;
 import com.muzima.search.api.model.serialization.Algorithm;
+import org.apache.lucene.search.SortField;
 
 import java.io.IOException;
 import java.util.List;
@@ -148,6 +149,7 @@ public interface Resource {
      * @see <a href="http://goessner.net/articles/JsonPath/">JsonPath Operators</a>
      */
     void addFieldDefinition(final String name, final String expression, final Boolean unique);
+    void addSortField(final SortField sortField);
 
     /**
      * Get all searchable fields configuration for this resource. Searchable field are a field on which a client can
@@ -159,6 +161,7 @@ public interface Resource {
      *      Syntax</a>
      */
     List<SearchableField> getSearchableFields();
+    List<SortField> getSortableFields();
 
     /**
      * Perform serialization for the object and returning the String representation of the object. Default

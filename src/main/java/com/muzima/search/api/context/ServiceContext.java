@@ -20,6 +20,7 @@ import com.muzima.search.api.resource.ObjectResource;
 import com.muzima.search.api.resource.Resource;
 import com.muzima.search.api.resource.ResourceConstants;
 import com.muzima.search.api.util.StringUtil;
+import org.apache.lucene.search.SortField;
 
 import java.io.File;
 import java.io.FileFilter;
@@ -64,7 +65,6 @@ public final class ServiceContext {
 
         if (resource == null)
             throw new ServiceException("Trying to register invalid resource object.");
-
         getResourceRegistry().put(name, resource);
     }
 
@@ -191,6 +191,7 @@ public final class ServiceContext {
                 resource.addFieldDefinition(fieldName.toString(), expression, unique);
             }
         }
+
         return resource;
     }
 

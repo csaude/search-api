@@ -213,6 +213,11 @@ public class RestAssuredServiceImpl implements RestAssuredService {
                                   final Integer page, final Integer pageSize) throws IOException {
         return indexer.getObjects(filters, clazz, page, pageSize);
     }
+    @Override
+    public <T> List<T> getObjects(final List<Filter> filters, final Class<T> clazz,
+                                  final Integer page, final Integer pageSize, final Resource resource) throws IOException {
+        return indexer.getObjects(filters, clazz, page, pageSize, resource);
+    }
 
     @Override
     public <T> Integer countObjects(final List<Filter> filters, final Class<T> clazz) throws IOException {

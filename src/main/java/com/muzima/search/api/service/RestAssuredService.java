@@ -98,8 +98,21 @@ public interface RestAssuredService {
      */
     <T> List<T> getObjects(final List<Filter> filters, final Class<T> clazz) throws IOException;
 
+    /**
+     * Search for objects with matching <code>filter</code> and <code>clazz</code> type from the local repository.
+     * This method will return list of objects matching the search filter and page number
+     * or empty list if no object match the search query.
+     *
+     * @param filters the search filter to limit the number of returned object.
+     * @param clazz   the expected return type of the object.
+     * @return list of all object with matching <code>query</code> and <code>clazz</code> or empty list.
+     * @should return all object matching the search query string and class.
+     * @should return empty list when no object match the search query and class.
+     * @should return empty list when the page index exceeds available pages
+     */
     <T> List<T> getObjects(final List<Filter> filters, final Class<T> clazz,
-                           final Integer page, final Integer pageSize) throws IOException;
+                           final Integer page, final Integer pageSize) throws IOException;<T> List<T> getObjects(final List<Filter> filters, final Class<T> clazz,
+                           final Integer page, final Integer pageSize, final Resource resource) throws IOException;
 
     <T> Integer countObjects(final List<Filter> filters, final Class<T> clazz) throws IOException;
 
