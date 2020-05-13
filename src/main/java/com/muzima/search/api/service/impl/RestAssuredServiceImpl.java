@@ -209,14 +209,19 @@ public class RestAssuredServiceImpl implements RestAssuredService {
     }
 
     @Override
+    public <T> List<T> getSortedObjects(final List<Filter> filters, final Class<T> clazz, final Resource resource) throws IOException {
+        return indexer.getSortedObjects(filters, clazz, resource);
+    }
+
+    @Override
     public <T> List<T> getObjects(final List<Filter> filters, final Class<T> clazz,
                                   final Integer page, final Integer pageSize) throws IOException {
         return indexer.getObjects(filters, clazz, page, pageSize);
     }
     @Override
-    public <T> List<T> getObjects(final List<Filter> filters, final Class<T> clazz,
-                                  final Integer page, final Integer pageSize, final Resource resource) throws IOException {
-        return indexer.getObjects(filters, clazz, page, pageSize, resource);
+    public <T> List<T> getSortedObjects(final List<Filter> filters, final Class<T> clazz, final Resource resource,
+                                  final Integer page, final Integer pageSize) throws IOException {
+        return indexer.getSortedObjects(filters, clazz, resource, page, pageSize);
     }
 
     @Override
@@ -235,9 +240,20 @@ public class RestAssuredServiceImpl implements RestAssuredService {
     }
 
     @Override
+    public List<Searchable> getSortedObjects(final List<Filter> filters, final Resource resource) throws IOException {
+        return indexer.getSortedObjects(filters, resource);
+    }
+
+    @Override
     public List<Searchable> getObjects(final List<Filter> filters, final Resource resource,
                                        final Integer page, final Integer pageSize) throws IOException {
         return indexer.getObjects(filters, resource, page, pageSize);
+    }
+
+    @Override
+    public List<Searchable> getSortedObjects(final List<Filter> filters, final Resource resource,
+                                       final Integer page, final Integer pageSize) throws IOException {
+        return indexer.getSortedObjects(filters, resource, page, pageSize);
     }
 
     @Override

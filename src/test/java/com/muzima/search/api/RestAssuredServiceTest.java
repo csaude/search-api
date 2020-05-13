@@ -12,6 +12,8 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.jayway.jsonpath.JsonPath;
 import com.muzima.search.api.context.ServiceContext;
+import com.muzima.search.api.filter.Filter;
+import com.muzima.search.api.filter.FilterFactory;
 import com.muzima.search.api.model.object.Searchable;
 import com.muzima.search.api.model.resolver.Resolver;
 import com.muzima.search.api.model.serialization.Algorithm;
@@ -24,6 +26,7 @@ import com.muzima.search.api.sample.domain.Patient;
 import com.muzima.search.api.service.RestAssuredService;
 import com.muzima.search.api.util.StreamUtil;
 import com.muzima.search.api.util.StringUtil;
+import org.apache.lucene.search.SortField;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -38,6 +41,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -84,6 +88,7 @@ public class RestAssuredServiceTest {
 
         Assert.assertNotNull(patientUuid);
         Assert.assertNotNull(patientGivenName);
+        Assert.assertNotNull(patientFamilyName);
     }
 
     protected void registerResources(final Injector injector) throws Exception {
@@ -122,6 +127,15 @@ public class RestAssuredServiceTest {
                     }
                     String expression = map.get(fieldName).toString();
                     resource.addFieldDefinition(fieldName.toString(), expression, unique);
+                }
+            }
+
+            Object sortableFields = JsonPath.read(configuration, ResourceConstants.SORT_FIELD);
+            if (sortableFields instanceof Map) {
+                Map map = (Map) sortableFields;
+                for (Object fieldName : map.keySet()) {
+                    SortField sortField = new SortField((String)fieldName, SortField.STRING);
+                    resource.addSortField(sortField);
                 }
             }
             context = injector.getInstance(ServiceContext.class);
@@ -295,6 +309,76 @@ public class RestAssuredServiceTest {
             Assert.assertNotNull(patient);
             Assert.assertEquals(Patient.class, patient.getClass());
         }
+    }
+    /**
+     * @verifies return all object matching the search search string and resource
+     * @see RestAssuredService#getObjects(String, com.muzima.search.api.resource.Resource)
+     */
+    @Test
+    public void getObjects_shouldReturnAllObjectMatchingTheSearchSearchStringAndResourceWhenSorted() throws Exception {
+        Resource resource = context.getResource(PATIENT_RESOURCE);
+        List<Filter> filters = new ArrayList<Filter>();
+        Filter filter = FilterFactory.createFilter("givenName", "T*");
+        filters.add(filter);
+
+        //Test service.getSortedObjects(filters, resource)
+        List<Searchable> patients = service.getSortedObjects(filters, resource);
+        Assert.assertNotNull(patients);
+        Assert.assertEquals(3, patients.size());
+
+        List<Patient> sortList = new ArrayList<Patient>();
+        for (Object patient : patients) {
+            Assert.assertNotNull(patient);
+            Assert.assertEquals(Patient.class, patient.getClass());
+            sortList.add((Patient) patient);
+        }
+        Collections.sort(sortList);
+        Assert.assertEquals(sortList,patients);
+
+        //service.getSortedObjects(filters, resource, page, pageSize)
+        int page=1;
+        int pageSize=2;
+        patients = service.getSortedObjects(filters, resource, page, pageSize);
+        Assert.assertNotNull(patients);
+        Assert.assertEquals(2, patients.size());
+
+        sortList = new ArrayList<Patient>();
+        for (Object patient : patients) {
+            Assert.assertNotNull(patient);
+            Assert.assertEquals(Patient.class, patient.getClass());
+            sortList.add((Patient) patient);
+        }
+        Collections.sort(sortList);
+        Assert.assertEquals(sortList,patients);
+
+        //service.getSortedObjects(filters, clazz, resource)
+        Class<Searchable> clazz = resource.getSearchable();
+        patients = service.getSortedObjects(filters, clazz, resource);
+        Assert.assertNotNull(patients);
+        Assert.assertEquals(3, patients.size());
+
+        sortList = new ArrayList<Patient>();
+        for (Object patient : patients) {
+            Assert.assertNotNull(patient);
+            Assert.assertEquals(Patient.class, patient.getClass());
+            sortList.add((Patient) patient);
+        }
+        Collections.sort(sortList);
+        Assert.assertEquals(sortList,patients);
+
+        //service.getSortedObjects(filters, clazz, resource, page, pageSize)
+        patients = service.getSortedObjects(filters, clazz, resource, page, pageSize);
+        Assert.assertNotNull(patients);
+        Assert.assertEquals(2, patients.size());
+
+        sortList = new ArrayList<Patient>();
+        for (Object patient : patients) {
+            Assert.assertNotNull(patient);
+            Assert.assertEquals(Patient.class, patient.getClass());
+            sortList.add((Patient) patient);
+        }
+        Collections.sort(sortList);
+        Assert.assertEquals(sortList,patients);
     }
 
     /**

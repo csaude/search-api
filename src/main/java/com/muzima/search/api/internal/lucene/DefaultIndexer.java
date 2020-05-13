@@ -681,9 +681,8 @@ public class DefaultIndexer implements Indexer {
             logger.debug("Query getObject(String, Class): {}", booleanQuery.toString());
         }
 
-        List<Document> documents = findDocuments(booleanQuery);
+        List<Document> documents = findDocuments(booleanQuery, resource.getSortableFields());
         for (Document document : documents) {
-            String resourceName = document.get(DEFAULT_FIELD_RESOURCE);
             String json = document.get(DEFAULT_FIELD_JSON);
             objects.add(clazz.cast(resource.deserialize(json)));
         }
@@ -730,7 +729,7 @@ public class DefaultIndexer implements Indexer {
             logger.debug("Query getObject(String, Class): {}", booleanQuery.toString());
         }
 
-        List<Document> documents = findDocuments(booleanQuery);
+        List<Document> documents = findDocuments(booleanQuery, resource.getSortableFields());
         for (Document document : documents) {
             String json = document.get(DEFAULT_FIELD_JSON);
             objects.add(resource.deserialize(json));
