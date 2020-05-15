@@ -11,6 +11,7 @@ package com.muzima.search.api.resource;
 import com.muzima.search.api.model.object.Searchable;
 import com.muzima.search.api.model.resolver.Resolver;
 import com.muzima.search.api.model.serialization.Algorithm;
+import org.apache.lucene.search.SortField;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,6 +31,7 @@ public class ObjectResource implements Resource {
     private final Resolver resolver;
 
     private List<SearchableField> searchableFields;
+    private List<SortField> sortableFields;
 
     public ObjectResource(final String name, final String rootNode, final Class objectClass,
                           final Algorithm algorithm, final Resolver resolver) {
@@ -39,6 +41,7 @@ public class ObjectResource implements Resource {
         this.algorithm = algorithm;
         this.resolver = resolver;
         this.searchableFields = new ArrayList<SearchableField>();
+        this.sortableFields = new ArrayList<SortField>();
     }
 
     @Override
@@ -181,6 +184,11 @@ public class ObjectResource implements Resource {
         getSearchableFields().add(new SearchableField(name, expression, unique));
     }
 
+    @Override
+    public void addSortField(SortField sortField) {
+        getSortableFields().add(sortField);
+    }
+
     /**
      * Get all searchable fields configuration for this resource. Searchable field are a field on which a client can
      * do filter and search. The search / query string will in the form of <a href="https://lucene.apache
@@ -193,6 +201,9 @@ public class ObjectResource implements Resource {
     @Override
     public List<SearchableField> getSearchableFields() {
         return searchableFields;
+    }
+    public List<SortField> getSortableFields() {
+        return sortableFields;
     }
 
     /**

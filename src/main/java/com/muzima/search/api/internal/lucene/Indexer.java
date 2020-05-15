@@ -30,15 +30,23 @@ public interface Indexer {
     Boolean objectExists(final String key, final Resource resource) throws IOException;
 
     <T> List<T> getObjects(final List<Filter> filters, final Class<T> clazz) throws IOException;
+    <T> List<T> getSortedObjects(final List<Filter> filters, final Class<T> clazz,
+                                 final Resource resource) throws IOException;
 
     <T> List<T> getObjects(final List<Filter> filters, final Class<T> clazz,
+                           final Integer page, final Integer pageSize) throws IOException;
+
+    <T> List<T> getSortedObjects(final List<Filter> filters, final Class<T> clazz, final Resource resource,
                            final Integer page, final Integer pageSize) throws IOException;
 
     <T> Integer countObjects(final List<Filter> filters, final Class<T> clazz) throws IOException;
 
     List<Searchable> getObjects(final List<Filter> filters, final Resource resource) throws IOException;
+    List<Searchable> getSortedObjects(final List<Filter> filters, final Resource resource) throws IOException;
 
     List<Searchable> getObjects(final List<Filter> filters, final Resource resource,
+                                final Integer page, final Integer pageSize) throws IOException;
+    List<Searchable> getSortedObjects(final List<Filter> filters, final Resource resource,
                                 final Integer page, final Integer pageSize) throws IOException;
 
     Integer countObjects(final List<Filter> filters, final Resource resource) throws IOException;

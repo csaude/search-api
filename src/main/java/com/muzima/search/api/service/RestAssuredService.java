@@ -98,7 +98,50 @@ public interface RestAssuredService {
      */
     <T> List<T> getObjects(final List<Filter> filters, final Class<T> clazz) throws IOException;
 
+    /**
+     * Search for objects with matching <code>filter</code> and <code>clazz</code> type from the local repository.
+     * This method will return sorted list of all matching objects or empty list if no object match the search query.
+     *
+     * @param filters the search filter to limit the number of returned object.
+     * @param clazz   the expected return type of the object.
+     * @param resource the resource descriptor used to register the object.
+     * @return list of all object with matching <code>query</code> and <code>clazz</code> or empty list.
+     * @should return all object matching the search query string and class.
+     * @should return empty list when no object match the search query and class.
+     * @should return results sorted by sortable fields defined in resource configuration list
+     */
+    <T> List<T> getSortedObjects(final List<Filter> filters, final Class<T> clazz, final Resource resource) throws IOException;
+
+    /**
+     * Search for objects with matching <code>filter</code> and <code>clazz</code> type from the local repository.
+     * This method will return list of objects matching the search filter and page number
+     * or empty list if no object match the search query.
+     *
+     * @param filters the search filter to limit the number of returned object.
+     * @param clazz   the expected return type of the object.
+     * @return list of all object with matching <code>query</code> and <code>clazz</code> or empty list.
+     * @should return all object matching the search query string and class.
+     * @should return empty list when no object match the search query and class.
+     * @should return empty list when the page index exceeds available pages
+     */
     <T> List<T> getObjects(final List<Filter> filters, final Class<T> clazz,
+                           final Integer page, final Integer pageSize) throws IOException;
+
+    /**
+     * Search for objects with matching <code>filter</code> and <code>clazz</code> type from the local repository.
+     * This method will return sorted list of objects matching the search filter and page number
+     * or empty list if no object match the search query.
+     *
+     * @param filters the search filter to limit the number of returned object.
+     * @param clazz   the expected return type of the object.
+     * @param resource the resource descriptor used to register the object.
+     * @return list of all object with matching <code>query</code> and <code>clazz</code> or empty list.
+     * @should return all object matching the search query string and class.
+     * @should return empty list when no object match the search query and class.
+     * @should return empty list when the page index exceeds available pages
+     * @should return results sorted by sortable fields defined in resource configuration list
+     */
+    <T> List<T> getSortedObjects(final List<Filter> filters, final Class<T> clazz, final Resource resource,
                            final Integer page, final Integer pageSize) throws IOException;
 
     <T> Integer countObjects(final List<Filter> filters, final Class<T> clazz) throws IOException;
@@ -115,7 +158,34 @@ public interface RestAssuredService {
      */
     List<Searchable> getObjects(final List<Filter> filters, final Resource resource) throws IOException;
 
+    /**
+     * Search for objects with matching <code>filter</code> and <code>resource</code> type from the local repository.
+     * This method will return sorted list of all matching object or empty list if no object match the search query.
+     *
+     * @param filters  the search filter to limit the number of returned object.
+     * @param resource the resource descriptor used to register the object.
+     * @return list of all object with matching <code>query</code> and <code>resource</code> or empty list.
+     * @should return all object matching the search query and resource.
+     * @should return empty list when no object match the search query and resource.
+     * @should return results sorted by sortable fields defined in resource configuration list
+     */
+    List<Searchable> getSortedObjects(final List<Filter> filters, final Resource resource) throws IOException;
+
     List<Searchable> getObjects(final List<Filter> filters, final Resource resource,
+                                final Integer page, final Integer pageSize) throws IOException;
+
+    /**
+     * Search for objects with matching <code>filter</code> and <code>resource</code> type from the local repository.
+     * This method will return sorted list of all matching objects and page number or empty list if no object match the search query.
+     *
+     * @param filters  the search filter to limit the number of returned object.
+     * @param resource the resource descriptor used to register the object.
+     * @return list of all object with matching <code>query</code> and <code>resource</code> or empty list.
+     * @should return all object matching the search query and resource.
+     * @should return empty list when no object match the search query and resource.
+     * @should return results sorted by sortable fields defined in resource configuration list
+     */
+    List<Searchable> getSortedObjects(final List<Filter> filters, final Resource resource,
                                 final Integer page, final Integer pageSize) throws IOException;
 
     Integer countObjects(final List<Filter> filters, final Resource resource) throws IOException;

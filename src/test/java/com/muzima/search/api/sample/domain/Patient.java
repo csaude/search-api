@@ -10,7 +10,7 @@ package com.muzima.search.api.sample.domain;
 
 import com.muzima.search.api.model.object.Searchable;
 
-public class Patient implements Searchable {
+public class Patient implements Searchable, Comparable<Patient> {
 
     private String uuid;
 
@@ -130,5 +130,19 @@ public class Patient implements Searchable {
      */
     public void setGender(final String gender) {
         this.gender = gender;
+    }
+
+    public String getDisplayName() {
+        if (getFamilyName() == null && getGivenName() == null && getMiddleName() == null)
+            return null;
+        return getFamilyName() + ", " + getGivenName() + (getMiddleName() != null ? " " + getMiddleName(): "");
+    }
+
+    @Override
+    public int compareTo(Patient patient) {
+        if (this.getDisplayName() != null && patient.getDisplayName() != null) {
+            return this.getDisplayName().toLowerCase().compareTo(patient.getDisplayName().toLowerCase());
+        }
+        return 0;
     }
 }

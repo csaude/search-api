@@ -14,7 +14,13 @@
                     "givenName": "$['personName.givenName']",
                     "middleName": "$['personName.middleName']",
                     "familyName": "$['personName.familyName']"
-                }
+                },
+           "field.sortable":
+                {
+                    "familyName": "$['personName.familyName']",
+                    "givenName": "$['personName.givenName']",
+                    "middleName": "$['personName.middleName']"
+                },
         },
         {
             "resource.name": "Search Patient Resource",
@@ -30,7 +36,8 @@
                     "givenName": "$['personName.givenName']",
                     "middleName": "$['personName.middleName']",
                     "familyName": "$['personName.familyName']"
-                }
+                },
+            "field.sortable":{}
         }
     ]
 }
