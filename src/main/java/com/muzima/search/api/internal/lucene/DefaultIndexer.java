@@ -287,7 +287,7 @@ public class DefaultIndexer implements Indexer {
 
             ScoreDoc[] hits = docs.scoreDocs;
             for (int i = (pageSize * (page - 1)); i < pageSize * page; i++) {
-                if(i<hits.length) {
+                if (i < hits.length) {
                     ScoreDoc hit = hits[i];
                     documents.add(searcher.doc(hit.doc));
                 } else {
@@ -319,7 +319,7 @@ public class DefaultIndexer implements Indexer {
         if (searcher != null) {
             TopDocs countDocs = searcher.search(query, DEFAULT_MAX_DOCUMENTS);
 
-            if(sortFields.size() > 0) {
+            if (sortFields.size() > 0) {
                 SortField[] sortFieldsArray = new SortField[sortFields.size()];
                 sortFields.toArray(sortFieldsArray);
                 Sort sort = new Sort(sortFieldsArray);
@@ -578,7 +578,6 @@ public class DefaultIndexer implements Indexer {
         if (logger.isDebugEnabled()) {
             logger.debug("Query getObject(String, Class): {}", booleanQuery.toString());
         }
-
         List<Document> documents = findDocuments(booleanQuery);
         for (Document document : documents) {
             String resourceName = document.get(DEFAULT_FIELD_RESOURCE);
@@ -883,6 +882,21 @@ public class DefaultIndexer implements Indexer {
             Object jsonObject = JsonPath.read(jsonString, "$");
             deleteObject(jsonObject, resource, writer);
         }
+        commit(writer);
+    }
+    @Override
+    public synchronized  <T> void deleteObjects(final List<Filter> filters, final Class<T> clazz) throws IOException {
+        IndexWriter writer = createIndexWriter();
+
+        BooleanQuery booleanQuery = new BooleanQuery();
+        booleanQuery.add(createClassQuery(clazz), BooleanClause.Occur.MUST);
+        addFilters(filters, booleanQuery);
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("Query getObject(String, Class): {}", booleanQuery.toString());
+        }
+
+        writer.deleteDocuments(booleanQuery);
         commit(writer);
     }
 

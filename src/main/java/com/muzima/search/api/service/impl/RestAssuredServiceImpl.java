@@ -323,4 +323,16 @@ public class RestAssuredServiceImpl implements RestAssuredService {
     public void updateObjects(final List<Searchable> objects, final Resource resource) throws IOException {
         indexer.updateObjects(objects, resource);
     }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @see RestAssuredService#deleteObjects(List, Class)
+     */
+    @Override
+    public <T> void deleteObjects(final List<Filter> filters, final Class<T> clazz) throws IOException{
+        indexer.deleteObjects(filters,clazz);
+    }
+
+
 }

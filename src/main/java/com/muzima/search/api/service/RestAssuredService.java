@@ -223,8 +223,7 @@ public interface RestAssuredService {
 
     /**
      * Remove objects based on the resource from the local repository. The method will determine if there's unique
-     * <code>object</code> in the local repository and then remove it. This method will return null if there's no
-     * object in the local repository match the object passed to this method.
+     * <code>object</code> in the local repository and then remove it.
      * <p/>
      * Internally, this method will serialize the object to json and then using the resource object, the method will
      * recreate unique key query to find the entry in the local lucene repository. If no unique searchable field is
@@ -264,4 +263,14 @@ public interface RestAssuredService {
      * @param resource the resource object which will describe how to index the json resource to lucene.
      */
     void updateObjects(final List<Searchable> objects, Resource resource) throws IOException;
+
+    /**
+     * Remove objects with matching <code>filter</code> and <code>clazz</code> type from the local repository.
+     * This method will return list of all matching object or empty list if no object match the search query.
+     *
+     * @param filters the search filter to limit the number of objects to be deleted.
+     * @param clazz   the type of the objects to be deleted.
+     * @should remove all objects matching the search filter and class from the internal index system.
+     */
+    <T> void deleteObjects(final List<Filter> filters, final Class<T> clazz) throws IOException;
 }
