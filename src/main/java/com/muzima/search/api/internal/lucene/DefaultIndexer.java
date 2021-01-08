@@ -224,11 +224,13 @@ public class DefaultIndexer implements Indexer {
         // Iterating over all hits:
         // * http://stackoverflow.com/questions/3300265/lucene-3-iterating-over-all-hits
         if (searcher != null) {
-            TopDocs countDocs = searcher.search(query, DEFAULT_MAX_DOCUMENTS);
-            TopDocs docs = searcher.search(query, countDocs.totalHits > 0 ? countDocs.totalHits : DEFAULT_MAX_DOCUMENTS);
-            ScoreDoc[] hits = docs.scoreDocs;
-            for (ScoreDoc hit : hits) {
-                documents.add(searcher.doc(hit.doc));
+            synchronized (this) {
+                TopDocs countDocs = searcher.search(query, DEFAULT_MAX_DOCUMENTS);
+                TopDocs docs = searcher.search(query, countDocs.totalHits > 0 ? countDocs.totalHits : DEFAULT_MAX_DOCUMENTS);
+                ScoreDoc[] hits = docs.scoreDocs;
+                for (ScoreDoc hit : hits) {
+                    documents.add(searcher.doc(hit.doc));
+                }
             }
         }
         return documents;
@@ -251,14 +253,16 @@ public class DefaultIndexer implements Indexer {
         // Iterating over all hits:
         // * http://stackoverflow.com/questions/3300265/lucene-3-iterating-over-all-hits
         if (searcher != null && sortFields.size() >0) {
-            SortField[] sortFieldsArray = new SortField[sortFields.size()];
-            sortFields.toArray(sortFieldsArray);
-            Sort sort = new Sort(sortFieldsArray);
-            TopDocs countDocs = searcher.search(query, DEFAULT_MAX_DOCUMENTS);
-            TopDocs docs = searcher.search(query, countDocs.totalHits > 0 ? countDocs.totalHits : DEFAULT_MAX_DOCUMENTS, sort);
-            ScoreDoc[] hits = docs.scoreDocs;
-            for (ScoreDoc hit : hits) {
-                documents.add(searcher.doc(hit.doc));
+            synchronized (this) {
+                SortField[] sortFieldsArray = new SortField[sortFields.size()];
+                sortFields.toArray(sortFieldsArray);
+                Sort sort = new Sort(sortFieldsArray);
+                TopDocs countDocs = searcher.search(query, DEFAULT_MAX_DOCUMENTS);
+                TopDocs docs = searcher.search(query, countDocs.totalHits > 0 ? countDocs.totalHits : DEFAULT_MAX_DOCUMENTS, sort);
+                ScoreDoc[] hits = docs.scoreDocs;
+                for (ScoreDoc hit : hits) {
+                    documents.add(searcher.doc(hit.doc));
+                }
             }
         }
         return documents;
@@ -281,17 +285,19 @@ public class DefaultIndexer implements Indexer {
         // Iterating over all hits:
         // * http://stackoverflow.com/questions/3300265/lucene-3-iterating-over-all-hits
         if (searcher != null) {
-            TopDocs countDocs = searcher.search(query, DEFAULT_MAX_DOCUMENTS);
+            synchronized (this) {
+                TopDocs countDocs = searcher.search(query, DEFAULT_MAX_DOCUMENTS);
 
-            TopDocs docs = searcher.search(query, countDocs.totalHits > 0 ? countDocs.totalHits : DEFAULT_MAX_DOCUMENTS);
+                TopDocs docs = searcher.search(query, countDocs.totalHits > 0 ? countDocs.totalHits : DEFAULT_MAX_DOCUMENTS);
 
-            ScoreDoc[] hits = docs.scoreDocs;
-            for (int i = (pageSize * (page - 1)); i < pageSize * page; i++) {
-                if (i < hits.length) {
-                    ScoreDoc hit = hits[i];
-                    documents.add(searcher.doc(hit.doc));
-                } else {
-                    break;
+                ScoreDoc[] hits = docs.scoreDocs;
+                for (int i = (pageSize * (page - 1)); i < pageSize * page; i++) {
+                    if (i < hits.length) {
+                        ScoreDoc hit = hits[i];
+                        documents.add(searcher.doc(hit.doc));
+                    } else {
+                        break;
+                    }
                 }
             }
         }
@@ -317,21 +323,23 @@ public class DefaultIndexer implements Indexer {
         // Iterating over all hits:
         // * http://stackoverflow.com/questions/3300265/lucene-3-iterating-over-all-hits
         if (searcher != null) {
-            TopDocs countDocs = searcher.search(query, DEFAULT_MAX_DOCUMENTS);
+            synchronized (this) {
+                TopDocs countDocs = searcher.search(query, DEFAULT_MAX_DOCUMENTS);
 
-            if (sortFields.size() > 0) {
-                SortField[] sortFieldsArray = new SortField[sortFields.size()];
-                sortFields.toArray(sortFieldsArray);
-                Sort sort = new Sort(sortFieldsArray);
-                TopDocs docs = searcher.search(query, countDocs.totalHits > 0 ? countDocs.totalHits : DEFAULT_MAX_DOCUMENTS, sort);
+                if (sortFields.size() > 0) {
+                    SortField[] sortFieldsArray = new SortField[sortFields.size()];
+                    sortFields.toArray(sortFieldsArray);
+                    Sort sort = new Sort(sortFieldsArray);
+                    TopDocs docs = searcher.search(query, countDocs.totalHits > 0 ? countDocs.totalHits : DEFAULT_MAX_DOCUMENTS, sort);
 
-                ScoreDoc[] hits = docs.scoreDocs;
-                for (int i = (pageSize * (page - 1)); i < pageSize * page; i++) {
-                    if (i < hits.length) {
-                        ScoreDoc hit = hits[i];
-                        documents.add(searcher.doc(hit.doc));
-                    } else {
-                        break;
+                    ScoreDoc[] hits = docs.scoreDocs;
+                    for (int i = (pageSize * (page - 1)); i < pageSize * page; i++) {
+                        if (i < hits.length) {
+                            ScoreDoc hit = hits[i];
+                            documents.add(searcher.doc(hit.doc));
+                        } else {
+                            break;
+                        }
                     }
                 }
             }
