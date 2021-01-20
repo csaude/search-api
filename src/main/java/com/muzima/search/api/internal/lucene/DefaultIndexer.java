@@ -909,13 +909,14 @@ public class DefaultIndexer implements Indexer {
     @Override
     public void createObjects(final List<Searchable> objects, final Resource resource) throws IOException {
         synchronized (searcherLock) {
+            IndexSearcher searcher = createIndexSearcher();
             IndexWriter writer = createIndexWriter();
             for (Searchable object : objects) {
                 String jsonString = resource.serialize(object);
                 Object jsonObject = JsonPath.read(jsonString, "$");
                 BooleanQuery query = createObjectQuery(jsonObject, resource.getSearchableFields());
                 query.add(createResourceQuery(resource), BooleanClause.Occur.MUST);
-                TopDocs docs = searchTopDocs(query, DEFAULT_MAX_DOCUMENTS);
+                TopDocs docs = searcher.search(query, DEFAULT_MAX_DOCUMENTS);
                 if (docs.totalHits == 0) {
                     writeObject(jsonObject, resource, writer);
                 }
