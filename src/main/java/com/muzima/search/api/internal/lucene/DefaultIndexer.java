@@ -77,6 +77,8 @@ public class DefaultIndexer implements Indexer {
 
     private static final Integer DEFAULT_MAX_DOCUMENTS = 1;
 
+    private final Object searcherLock = new Object();
+
     @Inject
     protected DefaultIndexer(final @Named("configuration.lucene.field.key") String defaultField,
                              final Version version, final Analyzer analyzer) {
@@ -98,6 +100,18 @@ public class DefaultIndexer implements Indexer {
      * Private Getter and Setter section **
      */
 
+    private TopDocs searchTopDocs(final Query query, final Integer maxDocuments) throws IOException {
+        return searchTopDocs(query, maxDocuments, null);
+    }
+
+    private TopDocs searchTopDocs(final Query query, final Integer maxDocuments,Sort sort) throws IOException {
+        IndexSearcher searcher = createIndexSearcher();
+        if (sort == null) {
+            return searcher.search(query, maxDocuments);
+        }
+        return searcher.search(query, maxDocuments, sort);
+    }
+
     private IndexWriter createIndexWriter() throws IOException {
         // might need to make this a synchronized call.
         // or allowing the caller to get new index searcher every time.
@@ -109,7 +123,9 @@ public class DefaultIndexer implements Indexer {
         // or allowing the caller to get new index searcher every time.
         try {
             if (indexSearcher == null) {
-                indexSearcher = searcherProvider.get();
+                synchronized (searcherLock) {
+                    indexSearcher = searcherProvider.get();
+                }
             }
         } catch (IOException e) {
             // silently ignoring this exception.
@@ -122,10 +138,12 @@ public class DefaultIndexer implements Indexer {
             writer.commit();
             writer.close();
 
-            IndexReader reader = indexSearcher.getIndexReader();
-            IndexReader openedReader = IndexReader.openIfChanged(reader);
-            if (openedReader != null && reader != openedReader) {
-              indexSearcher = new IndexSearcher(openedReader);
+            synchronized (searcherLock) {
+                IndexReader reader = indexSearcher.getIndexReader();
+                IndexReader openedReader = IndexReader.openIfChanged(reader);
+                if (openedReader != null && reader != openedReader) {
+                    indexSearcher = new IndexSearcher(openedReader);
+                }
             }
         }
     }
@@ -224,8 +242,8 @@ public class DefaultIndexer implements Indexer {
         // Iterating over all hits:
         // * http://stackoverflow.com/questions/3300265/lucene-3-iterating-over-all-hits
         if (searcher != null) {
-            TopDocs countDocs = searcher.search(query, DEFAULT_MAX_DOCUMENTS);
-            TopDocs docs = searcher.search(query, countDocs.totalHits > 0 ? countDocs.totalHits : DEFAULT_MAX_DOCUMENTS);
+            TopDocs countDocs = searchTopDocs(query, DEFAULT_MAX_DOCUMENTS);
+            TopDocs docs = searchTopDocs(query, countDocs.totalHits > 0 ? countDocs.totalHits : DEFAULT_MAX_DOCUMENTS);
             ScoreDoc[] hits = docs.scoreDocs;
             for (ScoreDoc hit : hits) {
                 documents.add(searcher.doc(hit.doc));
@@ -250,12 +268,12 @@ public class DefaultIndexer implements Indexer {
         IndexSearcher searcher = createIndexSearcher();
         // Iterating over all hits:
         // * http://stackoverflow.com/questions/3300265/lucene-3-iterating-over-all-hits
-        if (searcher != null && sortFields.size() >0) {
+        if (searcher != null && sortFields.size() > 0) {
             SortField[] sortFieldsArray = new SortField[sortFields.size()];
             sortFields.toArray(sortFieldsArray);
             Sort sort = new Sort(sortFieldsArray);
-            TopDocs countDocs = searcher.search(query, DEFAULT_MAX_DOCUMENTS);
-            TopDocs docs = searcher.search(query, countDocs.totalHits > 0 ? countDocs.totalHits : DEFAULT_MAX_DOCUMENTS, sort);
+            TopDocs countDocs = searchTopDocs(query, DEFAULT_MAX_DOCUMENTS);
+            TopDocs docs = searchTopDocs(query, countDocs.totalHits > 0 ? countDocs.totalHits : DEFAULT_MAX_DOCUMENTS, sort);
             ScoreDoc[] hits = docs.scoreDocs;
             for (ScoreDoc hit : hits) {
                 documents.add(searcher.doc(hit.doc));
@@ -281,13 +299,13 @@ public class DefaultIndexer implements Indexer {
         // Iterating over all hits:
         // * http://stackoverflow.com/questions/3300265/lucene-3-iterating-over-all-hits
         if (searcher != null) {
-            TopDocs countDocs = searcher.search(query, DEFAULT_MAX_DOCUMENTS);
+            TopDocs countDocs = searchTopDocs(query, DEFAULT_MAX_DOCUMENTS);
 
-            TopDocs docs = searcher.search(query, countDocs.totalHits > 0 ? countDocs.totalHits : DEFAULT_MAX_DOCUMENTS);
+            TopDocs docs = searchTopDocs(query, countDocs.totalHits > 0 ? countDocs.totalHits : DEFAULT_MAX_DOCUMENTS);
 
             ScoreDoc[] hits = docs.scoreDocs;
             for (int i = (pageSize * (page - 1)); i < pageSize * page; i++) {
-                if(i<hits.length) {
+                if (i < hits.length) {
                     ScoreDoc hit = hits[i];
                     documents.add(searcher.doc(hit.doc));
                 } else {
@@ -317,13 +335,13 @@ public class DefaultIndexer implements Indexer {
         // Iterating over all hits:
         // * http://stackoverflow.com/questions/3300265/lucene-3-iterating-over-all-hits
         if (searcher != null) {
-            TopDocs countDocs = searcher.search(query, DEFAULT_MAX_DOCUMENTS);
+            TopDocs countDocs = searchTopDocs(query, DEFAULT_MAX_DOCUMENTS);
 
-            if(sortFields.size() > 0) {
+            if (sortFields.size() > 0) {
                 SortField[] sortFieldsArray = new SortField[sortFields.size()];
                 sortFields.toArray(sortFieldsArray);
                 Sort sort = new Sort(sortFieldsArray);
-                TopDocs docs = searcher.search(query, countDocs.totalHits > 0 ? countDocs.totalHits : DEFAULT_MAX_DOCUMENTS, sort);
+                TopDocs docs = searchTopDocs(query, countDocs.totalHits > 0 ? countDocs.totalHits : DEFAULT_MAX_DOCUMENTS, sort);
 
                 ScoreDoc[] hits = docs.scoreDocs;
                 for (int i = (pageSize * (page - 1)); i < pageSize * page; i++) {
@@ -411,7 +429,7 @@ public class DefaultIndexer implements Indexer {
         }
 
         IndexSearcher searcher = createIndexSearcher();
-        TopDocs docs = searcher.search(query, DEFAULT_MAX_DOCUMENTS);
+        TopDocs docs = searchTopDocs(query, DEFAULT_MAX_DOCUMENTS);
         // only delete object if we can uniquely identify the object
 //        if (docs.totalHits == 1) {
             indexWriter.deleteDocuments(query);
@@ -457,7 +475,6 @@ public class DefaultIndexer implements Indexer {
     @Override
     public <T> T getObject(final String key, final Class<T> clazz) throws IOException {
         T object = null;
-
         BooleanQuery booleanQuery = new BooleanQuery();
         booleanQuery.add(createClassQuery(clazz), BooleanClause.Occur.MUST);
         if (!StringUtil.isEmpty(key)) {
@@ -497,7 +514,7 @@ public class DefaultIndexer implements Indexer {
         }
 
         IndexSearcher searcher = createIndexSearcher();
-        TopDocs docs = searcher.search(booleanQuery, DEFAULT_MAX_DOCUMENTS);
+        TopDocs docs = searchTopDocs(booleanQuery, DEFAULT_MAX_DOCUMENTS);
         if (docs.totalHits > 1) {
             throw new IOException("Unable to uniquely identify an object using key: '" + key + "' in the repository.");
         }
@@ -507,7 +524,6 @@ public class DefaultIndexer implements Indexer {
     @Override
     public Searchable getObject(final String key, final Resource resource) throws IOException {
         Searchable object = null;
-
         BooleanQuery booleanQuery = new BooleanQuery();
         booleanQuery.add(createResourceQuery(resource), BooleanClause.Occur.MUST);
         if (!StringUtil.isEmpty(key)) {
@@ -545,7 +561,7 @@ public class DefaultIndexer implements Indexer {
         }
 
         IndexSearcher searcher = createIndexSearcher();
-        TopDocs docs = searcher.search(booleanQuery, DEFAULT_MAX_DOCUMENTS);
+        TopDocs docs = searchTopDocs(booleanQuery, DEFAULT_MAX_DOCUMENTS);
         if (docs.totalHits > 1) {
             throw new IOException("Unable to uniquely identify an object using key: '" + key + "' in the repository.");
         }
@@ -570,7 +586,6 @@ public class DefaultIndexer implements Indexer {
     @Override
     public <T> List<T> getObjects(final List<Filter> filters, final Class<T> clazz) throws IOException {
         List<T> objects = new ArrayList<T>();
-
         BooleanQuery booleanQuery = new BooleanQuery();
         booleanQuery.add(createClassQuery(clazz), BooleanClause.Occur.MUST);
         addFilters(filters, booleanQuery);
@@ -578,7 +593,6 @@ public class DefaultIndexer implements Indexer {
         if (logger.isDebugEnabled()) {
             logger.debug("Query getObject(String, Class): {}", booleanQuery.toString());
         }
-
         List<Document> documents = findDocuments(booleanQuery);
         for (Document document : documents) {
             String resourceName = document.get(DEFAULT_FIELD_RESOURCE);
@@ -593,7 +607,6 @@ public class DefaultIndexer implements Indexer {
     public <T> List<T> getObjects(final List<Filter> filters, final Class<T> clazz,
                                   final Integer page, final Integer pageSize) throws IOException {
         List<T> objects = new ArrayList<T>();
-
         BooleanQuery booleanQuery = new BooleanQuery();
         booleanQuery.add(createClassQuery(clazz), BooleanClause.Occur.MUST);
         addFilters(filters, booleanQuery);
@@ -623,14 +636,13 @@ public class DefaultIndexer implements Indexer {
         }
 
         IndexSearcher searcher = createIndexSearcher();
-        TopDocs docs = searcher.search(booleanQuery, DEFAULT_MAX_DOCUMENTS);
+        TopDocs docs = searchTopDocs(booleanQuery, DEFAULT_MAX_DOCUMENTS);
         return docs.totalHits;
     }
 
     @Override
     public List<Searchable> getObjects(final List<Filter> filters, final Resource resource) throws IOException {
         List<Searchable> objects = new ArrayList<Searchable>();
-
         BooleanQuery booleanQuery = new BooleanQuery();
         booleanQuery.add(createResourceQuery(resource), BooleanClause.Occur.MUST);
         addFilters(filters, booleanQuery);
@@ -651,7 +663,6 @@ public class DefaultIndexer implements Indexer {
     public List<Searchable> getObjects(final List<Filter> filters, final Resource resource,
                                        final Integer page, final Integer pageSize) throws IOException {
         List<Searchable> objects = new ArrayList<Searchable>();
-
         BooleanQuery booleanQuery = new BooleanQuery();
         booleanQuery.add(createResourceQuery(resource), BooleanClause.Occur.MUST);
         addFilters(filters, booleanQuery);
@@ -672,7 +683,6 @@ public class DefaultIndexer implements Indexer {
     public <T> List<T> getSortedObjects(final List<Filter> filters, final Class<T> clazz,
                                         final Resource resource) throws IOException {
         List<T> objects = new ArrayList<T>();
-
         BooleanQuery booleanQuery = new BooleanQuery();
         booleanQuery.add(createClassQuery(clazz), BooleanClause.Occur.MUST);
         addFilters(filters, booleanQuery);
@@ -693,7 +703,6 @@ public class DefaultIndexer implements Indexer {
     public <T> List<T> getSortedObjects(final List<Filter> filters, final Class<T> clazz, final Resource resource,
                                         final Integer page, final Integer pageSize) throws IOException {
         List<T> objects = new ArrayList<T>();
-
         BooleanQuery booleanQuery = new BooleanQuery();
         booleanQuery.add(createClassQuery(clazz), BooleanClause.Occur.MUST);
         addFilters(filters, booleanQuery);
@@ -720,7 +729,6 @@ public class DefaultIndexer implements Indexer {
     @Override
     public List<Searchable> getSortedObjects(final List<Filter> filters, final Resource resource) throws IOException {
         List<Searchable> objects = new ArrayList<Searchable>();
-
         BooleanQuery booleanQuery = new BooleanQuery();
         booleanQuery.add(createResourceQuery(resource), BooleanClause.Occur.MUST);
         addFilters(filters, booleanQuery);
@@ -741,7 +749,6 @@ public class DefaultIndexer implements Indexer {
     public List<Searchable> getSortedObjects(final List<Filter> filters, final Resource resource,
                                        final Integer page, final Integer pageSize) throws IOException {
         List<Searchable> objects = new ArrayList<Searchable>();
-
         BooleanQuery booleanQuery = new BooleanQuery();
         booleanQuery.add(createResourceQuery(resource), BooleanClause.Occur.MUST);
         addFilters(filters, booleanQuery);
@@ -771,7 +778,7 @@ public class DefaultIndexer implements Indexer {
         }
 
         IndexSearcher searcher = createIndexSearcher();
-        TopDocs docs = searcher.search(booleanQuery, DEFAULT_MAX_DOCUMENTS);
+        TopDocs docs = searchTopDocs(booleanQuery, DEFAULT_MAX_DOCUMENTS);
         return docs.totalHits;
     }
 
@@ -779,7 +786,6 @@ public class DefaultIndexer implements Indexer {
     public <T> List<T> getObjects(final String searchString, final Class<T> clazz)
             throws ParseException, IOException {
         List<T> objects = new ArrayList<T>();
-
         BooleanQuery booleanQuery = new BooleanQuery();
         booleanQuery.add(createClassQuery(clazz), BooleanClause.Occur.MUST);
         if (!StringUtil.isEmpty(searchString)) {
@@ -805,7 +811,6 @@ public class DefaultIndexer implements Indexer {
     public <T> List<T> getObjects(final String searchString, final Class<T> clazz, final Integer page,
                                   final Integer pageSize) throws ParseException, IOException {
         List<T> objects = new ArrayList<T>();
-
         BooleanQuery booleanQuery = new BooleanQuery();
         booleanQuery.add(createClassQuery(clazz), BooleanClause.Occur.MUST);
         if (!StringUtil.isEmpty(searchString)) {
@@ -831,7 +836,6 @@ public class DefaultIndexer implements Indexer {
     public List<Searchable> getObjects(final String searchString, final Resource resource)
             throws ParseException, IOException {
         List<Searchable> objects = new ArrayList<Searchable>();
-
         BooleanQuery booleanQuery = new BooleanQuery();
         booleanQuery.add(createResourceQuery(resource), BooleanClause.Occur.MUST);
         if (!StringUtil.isEmpty(searchString)) {
@@ -855,7 +859,6 @@ public class DefaultIndexer implements Indexer {
     public List<Searchable> getObjects(final String searchString, final Resource resource, final Integer page,
                                        final Integer pageSize) throws ParseException, IOException {
         List<Searchable> objects = new ArrayList<Searchable>();
-
         BooleanQuery booleanQuery = new BooleanQuery();
         booleanQuery.add(createResourceQuery(resource), BooleanClause.Occur.MUST);
         if (!StringUtil.isEmpty(searchString)) {
@@ -876,41 +879,61 @@ public class DefaultIndexer implements Indexer {
     }
 
     @Override
-    public synchronized void deleteObjects(final List<Searchable> objects, final Resource resource) throws IOException {
-        IndexWriter writer = createIndexWriter();
-        for (Searchable object : objects) {
-            String jsonString = resource.serialize(object);
-            Object jsonObject = JsonPath.read(jsonString, "$");
-            deleteObject(jsonObject, resource, writer);
-        }
-        commit(writer);
-    }
-
-    @Override
-    public synchronized void createObjects(final List<Searchable> objects, final Resource resource) throws IOException {
-        IndexSearcher searcher = createIndexSearcher();
-        IndexWriter writer = createIndexWriter();
-        for (Searchable object : objects) {
-            String jsonString = resource.serialize(object);
-            Object jsonObject = JsonPath.read(jsonString, "$");
-            BooleanQuery query = createObjectQuery(jsonObject, resource.getSearchableFields());
-            query.add(createResourceQuery(resource), BooleanClause.Occur.MUST);
-            TopDocs docs = searcher.search(query, DEFAULT_MAX_DOCUMENTS);
-            if (docs.totalHits == 0) {
-                writeObject(jsonObject, resource, writer);
+    public void deleteObjects(final List<Searchable> objects, final Resource resource) throws IOException {
+        synchronized (searcherLock) {
+            IndexWriter writer = createIndexWriter();
+            for (Searchable object : objects) {
+                String jsonString = resource.serialize(object);
+                Object jsonObject = JsonPath.read(jsonString, "$");
+                deleteObject(jsonObject, resource, writer);
             }
+            commit(writer);
         }
-        commit(writer);
+    }
+    @Override
+    public  <T> void deleteObjects(final List<Filter> filters, final Class<T> clazz) throws IOException {
+        IndexWriter writer = createIndexWriter();
+        BooleanQuery booleanQuery = new BooleanQuery();
+        booleanQuery.add(createClassQuery(clazz), BooleanClause.Occur.MUST);
+        addFilters(filters, booleanQuery);
+
+        if (logger.isDebugEnabled()) {
+            logger.debug("Query getObject(String, Class): {}", booleanQuery.toString());
+        }
+        synchronized (searcherLock) {
+            writer.deleteDocuments(booleanQuery);
+            commit(writer);
+        }
     }
 
     @Override
-    public synchronized void updateObjects(final List<Searchable> objects, final Resource resource) throws IOException {
-        IndexWriter writer = createIndexWriter();
-        for (Searchable object : objects) {
-            String jsonString = resource.serialize(object);
-            Object jsonObject = JsonPath.read(jsonString, "$");
-            updateObject(jsonObject, resource, writer);
+    public void createObjects(final List<Searchable> objects, final Resource resource) throws IOException {
+        synchronized (searcherLock) {
+            IndexWriter writer = createIndexWriter();
+            for (Searchable object : objects) {
+                String jsonString = resource.serialize(object);
+                Object jsonObject = JsonPath.read(jsonString, "$");
+                BooleanQuery query = createObjectQuery(jsonObject, resource.getSearchableFields());
+                query.add(createResourceQuery(resource), BooleanClause.Occur.MUST);
+                TopDocs docs = searchTopDocs(query, DEFAULT_MAX_DOCUMENTS);
+                if (docs.totalHits == 0) {
+                    writeObject(jsonObject, resource, writer);
+                }
+            }
+            commit(writer);
         }
-        commit(writer);
+    }
+
+    @Override
+    public void updateObjects(final List<Searchable> objects, final Resource resource) throws IOException {
+        synchronized (searcherLock) {
+            IndexWriter writer = createIndexWriter();
+            for (Searchable object : objects) {
+                String jsonString = resource.serialize(object);
+                Object jsonObject = JsonPath.read(jsonString, "$");
+                updateObject(jsonObject, resource, writer);
+            }
+            commit(writer);
+        }
     }
 }

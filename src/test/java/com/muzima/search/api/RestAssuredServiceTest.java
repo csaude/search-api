@@ -409,4 +409,21 @@ public class RestAssuredServiceTest {
         Patient afterDeletionPatient = service.getObject(patientUuid, Patient.class);
         Assert.assertNull(afterDeletionPatient);
     }
+
+    /**
+     * @verifies remove an object from the internal index system
+     * @see RestAssuredService#deleteObjects(java.util.List, com.muzima.search.api.resource.Resource)
+     */
+    @Test
+    public void invalidate_shouldRemoveAnObjectFromTheInternalIndexSystemBySearchFilter() throws Exception {
+        Patient patient = service.getObject(patientUuid, Patient.class);
+        Assert.assertNotNull(patient);
+        Assert.assertEquals(patientUuid, patient.getUuid());
+
+        Filter filter = FilterFactory.createFilter("uuid", patientUuid);
+        service.deleteObjects(Arrays.asList(filter), Patient.class);
+
+        Patient afterDeletionPatient = service.getObject(patientUuid, Patient.class);
+        Assert.assertNull(afterDeletionPatient);
+    }
 }

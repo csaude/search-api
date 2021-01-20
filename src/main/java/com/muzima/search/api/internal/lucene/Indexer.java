@@ -66,4 +66,5 @@ public interface Indexer {
     void createObjects(final List<Searchable> objects, Resource resource) throws IOException;
 
     void updateObjects(final List<Searchable> objects, Resource resource) throws IOException;
+    <T> void deleteObjects(final List<Filter> filters, final Class<T> clazz) throws IOException;
 }
