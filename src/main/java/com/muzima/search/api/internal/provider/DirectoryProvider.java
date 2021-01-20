@@ -83,7 +83,7 @@ public class    DirectoryProvider implements SearchProvider<Directory> {
             DataDecryptor dec = new DataDecryptor(password, salt, false);
 
             if (usingCompression) {
-                StorePipeTransformer st = new StorePipeTransformer(new DeflateDataTransformer(Deflater.BEST_COMPRESSION, 1), enc);
+                StorePipeTransformer st = new StorePipeTransformer(new DeflateDataTransformer(Deflater.BEST_SPEED, 1), enc);
                 ReadPipeTransformer rt = new ReadPipeTransformer(dec, new InflateDataTransformer());
 
                 if (logger.isDebugEnabled()) {
