@@ -1,0 +1,10 @@
+{
+    "personName.middleName": "Ambote",
+    "patientIdentifier.identifier": "363MO-5",
+    "uuid": "dd55e586-1691-11df-97a5-7038c432aabf",
+    "patientIdentifier.identifierType.name": "Old AMPATH Medical Record Number",
+    "personName.givenName": "Testarius",
+    "gender": "M",
+    "personName.familyName": "Indakasi",
+    "birthdate": "1965-09-18T00:00:00.000-0500"
+}
